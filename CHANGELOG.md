@@ -1,5 +1,15 @@
 # Änderungen
 
+## 1.2.0
+
+- Eigenständiger Board-Dienst mit lokaler Wallbox-Bedienseite, geprüften Befehlen, laufender Statusabfrage und dauerhaftem Fehlerverlauf ohne HA.
+- Authentifizierte lokale API mit Browser-Anmeldung, CSRF-Schutz und dauerhaftem Wiederholschutz für die letzten 128 Anfragekennungen.
+- Neue API-Verbindungsart in HA. Umkonfiguration des bestehenden Eintrags erhält alle 50 Entitäten und die Gerätezuordnung; bestehender HA-Verlauf bleibt erhalten. Adressänderungen desselben gebundenen Boards werden übernommen.
+- Bisherige direkte TCP-, USB- und Shelly-Verbindungen bleiben verfügbar. Der ausdrückliche Wechsel zum Board-Modus begrenzt den rohen TCP-Port auf das Board selbst.
+- Board-Installer sichert auch die Brückenkonfiguration und stellt sie bei fehlgeschlagener Aktivierung wieder her. Der Start des Controllers ändert keine Wallbox-Einstellungen.
+- Begrenzte lokale Netzwerkdiagnose außerhalb des Armbian-RAM-Logs. Keine automatischen WLAN- oder Board-Neustarts.
+- Tests für Authentifizierung, Wiederholschutz, Verbindungsabbrüche, Adresswechsel und den Erhalt der HA-Entitätskennungen.
+
 ## 1.1.0
 
 - Neue optionale HA-Bedienseite für Laden, Einstellungen und Diagnose im responsiven Petrol-Design; lokale Ressourcen und unverändertes Projektlogo.
