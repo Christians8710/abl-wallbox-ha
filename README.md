@@ -44,6 +44,8 @@ Die bisherige Integration `ev_charger_modbus` muss für denselben Anschluss deak
 
 Ein 32-A-Controller mit fester 16-A-Grenze erlaubt daher eine Ladestromvorgabe bis 16 A. Die Integration liest diese Werte getrennt aus; Registeradresse und Statusbits werden nicht als Stromstärke interpretiert.
 
+Wird die feste Stromgrenze gesetzt, senkt die Integration eine darüberliegende gespeicherte Ladestromvorgabe auf diese Grenze und prüft den zurückgelesenen Wert. Eine kleinere Vorgabe oder Ladepause bleibt erhalten. Das Erhöhen der festen Grenze erhöht die Ladestromvorgabe nicht automatisch. Einrichtung und reine Abfragen verändern weiterhin keine Einstellungen.
+
 Fehlende Strommesswerte werden als unbekannt dargestellt. Der vom Controller gelieferte Sonderwert für fehlende Messung wird niemals als 100 A ausgegeben. Die geschätzte Leistung ersetzt keinen Energiezähler.
 
 ## Einstellungen und Aktionen
