@@ -15,8 +15,8 @@ jobs:
           python-version: '3.14'
           cache: pip
       - run: python -m pip install -r requirements-dev.txt
-      - run: python -m ruff check custom_components tests
-      - run: python -m pytest -q tests/test_protocol.py tests/test_shelly.py
+      - run: python -m ruff check custom_components controller tests
+      - run: python -m pytest -q tests/test_protocol.py tests/test_shelly.py tests/test_controller.py
       - run: node --test tests/*.test.cjs
       - name: Bridge update and reboot safety tests
         run: |
