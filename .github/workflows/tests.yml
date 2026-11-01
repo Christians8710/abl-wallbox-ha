@@ -17,7 +17,11 @@ jobs:
       - run: python -m pip install -r requirements-dev.txt
       - run: python -m ruff check custom_components tests
       - run: python -m pytest -q tests/test_protocol.py tests/test_shelly.py
-      - run: node --test tests/shelly-bridge.test.cjs
+      - run: node --test tests/*.test.cjs
+      - name: Bridge update and reboot safety tests
+        run: |
+          python bridge/test_update.py
+          python bridge/test_reboot_button.py
   home-assistant:
     runs-on: ubuntu-latest
     steps:
