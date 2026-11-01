@@ -146,3 +146,52 @@ async def test_config_flow_uses_read_only_probe(hass):
         assert result["type"] == "create_entry"
     assert bus.writes == []
     assert bus.closed
+
+
+async def test_reconfigure_tcp_to_api_preserves_all_entity_and_device_ids(hass, tmp_path):
+    from controller.runtime import ControllerRuntime
+    from controller.shared import p as board_protocol
+    from test_controller import RuntimeBus
+    from custom_components.abl_wallbox.api_client import APIConnection
+    from homeassistant.helpers import device_registry as dr
+
+    entry, old_bus = await setup_entry(hass)
+    registry = er.async_get(hass)
+    original_entities = {(item.unique_id, item.entity_id, item.device_id) for item in er.async_entries_for_config_entry(registry, entry.entry_id)}
+    assert len(original_entities) == 50
+    original_device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, entry.entry_id)})
+    history = {'time': '2026-01-01T00:00:00+00:00', 'type': 'observed_fault', 'code': 'F3', 'description': 'Test history'}
+    entry.runtime_data.history.append(history)
+    await entry.runtime_data._store.async_save(entry.runtime_data._storage_data())
+
+    bus = RuntimeBus()
+    runtime = ControllerRuntime(board_protocol.Controller(bus), tmp_path)
+    await runtime.refresh()
+    async def request(_connection, method, path, payload=None):
+        assert path in ('/api/v1/state', '/api/v1/command')
+        return await runtime.execute(payload) if method == 'POST' else runtime.snapshot()
+
+    with patch.object(APIConnection, 'request', request):
+        result = await hass.config_entries.flow.async_init(DOMAIN, context={'source': 'reconfigure', 'entry_id': entry.entry_id})
+        result = await hass.config_entries.flow.async_configure(result['flow_id'], user_input={'connection_type': 'api'})
+        result = await hass.config_entries.flow.async_configure(result['flow_id'], user_input={
+            'name': 'ABL Test', 'host': 'board.example', 'port': 8080, 'address': 1, 'api_key': 'test-only-' + 'x' * 32,
+        })
+        assert result['type'] == 'abort' and result['reason'] == 'reconfigure_successful'
+        await hass.async_block_till_done()
+        assert old_bus.closed
+        assert len(hass.data[DOMAIN]) == 1
+        assert entry.data['connection_type'] == 'api' and entry.data['controller_id'] == runtime.controller_id
+        assert {(item.unique_id, item.entity_id, item.device_id) for item in er.async_entries_for_config_entry(registry, entry.entry_id)} == original_entities
+        assert dr.async_get(hass).async_get_device(identifiers={(DOMAIN, entry.entry_id)}).id == original_device.id
+        assert history in entry.runtime_data.history
+        assert bus.writes == []
+        target_id = entity_id(hass, entry, 'number', 'requested_current')
+        await hass.services.async_call('number', 'set_value', {'entity_id': target_id, 'value': 10}, blocking=True)
+        assert hass.states.get(target_id).state == '10'
+        # A local change of the physical address follows the same pinned board, without replacing HA entities.
+        await runtime.execute({'operation': 'configure', 'settings': {'address': 2}, 'address': 1, 'request_id': 'local-address-test-0001'})
+        await entry.runtime_data.async_request_refresh()
+        assert entry.data['address'] == 2
+        assert entity_id(hass, entry, 'number', 'requested_current') == target_id
+        assert await hass.config_entries.async_unload(entry.entry_id)
