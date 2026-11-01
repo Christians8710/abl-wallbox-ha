@@ -331,13 +331,16 @@ def main():
                 previous = rows
             stop.wait(2)
     finally:
-        if worker is not None:
-            worker.stop()
-        if process is not None and process.poll() is None:
-            process.terminate()
-            try: process.wait(timeout=10)
-            except subprocess.TimeoutExpired: process.kill(); process.wait()
         server.shutdown()
+        try:
+            if worker is not None:
+                worker.stop()
+        finally:
+            if process is not None and process.poll() is None:
+                process.terminate()
+                try: process.wait(timeout=10)
+                except subprocess.TimeoutExpired: process.kill(); process.wait()
+            server.server_close()
 
 if __name__ == "__main__":
     main()

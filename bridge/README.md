@@ -59,7 +59,7 @@ Die vorhandenen Dienste `abl-bridge` und `comitup-web`, die Programme unter `/us
 
 Das Programm sichert die betroffenen vorhandenen Dateien mit ihren Zugriffsrechten unter `/var/backups/abl-bridge/`. Es installiert die lokalen UI-Dateien nach `/usr/local/share/abl-bridge/ui/` und ersetzt die beiden Programme unter `/usr/local/sbin/`. Nur zuvor aktive Brücken-/Portaldienste werden neu gestartet. Eine abgeschaltete WLAN-Einrichtungsseite wird nicht gestartet. Die Verbindung zu Home Assistant wird kurz unterbrochen.
 
-Danach werden die Statusseite, das Logo, das Stylesheet, unveränderte USB-/TCP-Portzuordnungen sowie unveränderte WLAN- und Brückenkonfiguration geprüft. Schlägt eine Prüfung fehl, stellt das Update die betroffenen Programm-/UI-Dateien automatisch wieder her. Es führt keinen Board-Neustart und keine Wallbox-Befehle aus. Konfigurationsdateien, Netzwerkprofile und Passwörter werden weder ersetzt noch veröffentlicht.
+Beim reinen Update werden Statusseite, Logo, Stylesheet, USB-/TCP-Portzuordnungen sowie unveränderte WLAN- und Brückenkonfiguration geprüft. Mit `--standalone` werden zusätzlich die ausdrücklich beschriebenen Controller-Einstellungen der Brücke aktiviert und eine echte Wallbox-Antwort geprüft. Bei Fehlern werden Programme, UI-Dateien und Brückenkonfiguration wiederhergestellt. Es gibt keinen Board-Neustart und keine schreibenden Wallbox-Befehle. Netzwerkprofile und Passwörter werden weder ersetzt noch veröffentlicht.
 
 Nach Erfolg die bisherige Statusadresse, beispielsweise `http://abl-bridge.local:8080/`, neu laden. Die installierte Paketversion steht in `/usr/local/share/abl-bridge/VERSION`.
 

@@ -47,7 +47,7 @@ def source_file(name, source=SOURCE):
     return path
 
 def command(*args):
-    return subprocess.run(args, check=True, capture_output=True, text=True, timeout=30).stdout
+    return subprocess.run(args, check=True, capture_output=True, text=True, timeout=110).stdout
 
 def validate_sources(source=SOURCE):
     for name in TARGETS:
