@@ -148,7 +148,5 @@ class ABLCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             await self.async_refresh()
 
     async def async_refresh_counters(self) -> None:
-        if hasattr(self.controller, "refresh_counters"):
-            await self.controller.refresh_counters()
         self._counter_time = None
         await self.async_refresh()

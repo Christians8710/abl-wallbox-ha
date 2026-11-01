@@ -128,12 +128,16 @@ class APIController:
         return data
 
     async def refresh(self, *, counters=False):
-        # The board polls and persists counters independently of Home Assistant.
+        if counters:
+            return self._state(await self._request_command('refresh'))
         return self._state(await self.bus.request('GET', '/api/v1/state'))
 
-    async def _command(self, operation, **fields):
+    async def _request_command(self, operation, **fields):
         payload = {'request_id': secrets.token_hex(16), 'operation': operation, 'address': self.address, **fields}
-        response = await self.bus.request('POST', '/api/v1/command', payload)
+        return await self.bus.request('POST', '/api/v1/command', payload)
+
+    async def _command(self, operation, **fields):
+        response = await self._request_command(operation, **fields)
         self._state(response, allow_address_change=operation == 'configure', allow_unavailable=True)
         return response.get('result')
 

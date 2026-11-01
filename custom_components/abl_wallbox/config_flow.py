@@ -86,8 +86,10 @@ class ABLConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def _probe(self, data):
         if data["connection_type"] in ("tcp", "shelly", "api"):
             data["host"] = data["host"].strip()
-            if not data["host"] or "://" in data["host"] or "/" in data["host"]:
+            if not data["host"] or "://" in data["host"] or any(character in data["host"] for character in '/?#@ \r\n\t'):
                 raise ValueError("Enter the hostname or IP without http://")
+            if data['connection_type'] == 'api':
+                data['api_key'] = data['api_key'].strip()
         else:
             data["device"] = data["device"].strip()
             if not data["device"]:
