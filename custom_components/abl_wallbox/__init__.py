@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
@@ -11,11 +12,15 @@ from homeassistant.helpers import config_validation as cv
 from .const import DOMAIN, PLATFORMS
 from .coordinator import ABLCoordinator
 from .protocol import ABLError, Bus, Controller, ShellyBus
+from .api_client import APIConnection, APIController
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 def bus_key(data: dict) -> tuple:
+    if data["connection_type"] == "api":
+        return ("api", data["host"].strip().lower(), data.get("port", 8080),
+                hashlib.sha256(data.get("api_key", "").encode()).hexdigest())
     if data["connection_type"] == "tcp":
         return ("tcp", data["host"].strip().lower(), data["port"])
     if data["connection_type"] == "shelly":
@@ -24,6 +29,8 @@ def bus_key(data: dict) -> tuple:
 
 
 def make_bus(data: dict) -> Bus:
+    if data["connection_type"] == "api":
+        return APIConnection(data["host"], data.get("port", 8080), data.get("api_key", ""))
     if data["connection_type"] == "shelly":
         return ShellyBus(
             data["host"],
@@ -41,6 +48,10 @@ def make_bus(data: dict) -> Bus:
     )
 
 
+def make_controller(bus, address, controller_id=None):
+    return APIController(bus, address, controller_id=controller_id) if isinstance(bus, APIConnection) else Controller(bus, address)
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     pools = hass.data.setdefault(DOMAIN, {})
     key = bus_key(entry.data)
@@ -52,7 +63,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         }
     pool = pools[key]
     pool["users"].add(entry.entry_id)
-    coordinator = ABLCoordinator(hass, entry, Controller(pool["bus"], entry.data["address"]))
+    coordinator = ABLCoordinator(hass, entry, make_controller(pool["bus"], entry.data["address"], entry.data.get("controller_id")))
+    coordinator.bus_key = key
     try:
         await coordinator.async_initialize()
         await coordinator.async_config_entry_first_refresh()
@@ -82,7 +94,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         return False
     await entry.runtime_data.async_shutdown()
     pools = hass.data[DOMAIN]
-    key = bus_key(entry.data)
+    key = entry.runtime_data.bus_key
     pool = pools.get(key)
     if pool:
         pool["users"].discard(entry.entry_id)

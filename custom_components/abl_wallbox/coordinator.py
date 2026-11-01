@@ -59,6 +59,21 @@ class ABLCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise UpdateFailed(str(err)) from err
         state = data["state"]
         data["state_description"] = STATE_LABELS.get(state, state)
+        if hasattr(self.controller, "board_history"):
+            if self.entry.data['address'] != self.controller.address:
+                self.hass.config_entries.async_update_entry(self.entry, data={**self.entry.data, 'address': self.controller.address})
+            # Preserve HA observations and merge the independently recorded board history.
+            previous_history = list(self.history)
+            combined = self.history + list(self.controller.board_history)
+            unique = {repr(sorted(item.items())): item for item in combined}
+            self.history = sorted(unique.values(), key=lambda item: item.get("time", ""))[-100:]
+            counters = dict(data['error_counters'])
+            if self.history != previous_history or counters != self._previous_counters:
+                self._previous_counters = counters
+                self._store.async_delay_save(self._storage_data, 2)
+            data["last_fault"] = self.history[-1]["code"] if self.history else "none"
+            data["fault_history"] = list(self.history)
+            return data
         data["fault"] = state.startswith("F") or any(
             data[k] for k in ("imbalance_detected", "overtemperature", "meter_fault", "upstream_lost")
         )
@@ -133,5 +148,7 @@ class ABLCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             await self.async_refresh()
 
     async def async_refresh_counters(self) -> None:
+        if hasattr(self.controller, "refresh_counters"):
+            await self.controller.refresh_counters()
         self._counter_time = None
         await self.async_refresh()

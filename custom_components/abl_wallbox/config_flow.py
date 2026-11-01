@@ -7,11 +7,13 @@ from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.helpers import selector
 
-from . import bus_key, make_bus
+from . import bus_key, make_bus, make_controller
+from .api_client import APIAuthenticationError
 from .const import DEFAULT_INTERVAL, DEFAULT_PORT, DOMAIN
-from .protocol import ABLError, Controller, ControllerBusy
+from .protocol import ABLError, ControllerBusy
 
 CONNECTIONS = {
+    "api": "Eigenständiger ABL-Controller / lokale API",
     "tcp": "TCP / Netzwerkbrücke",
     "serial": "USB / seriell / RFC2217",
     "shelly": "Shelly Pro RS485 (UART-Skript)",
@@ -19,17 +21,19 @@ CONNECTIONS = {
 
 
 def endpoint_id(data):
+    if data["connection_type"] == "api":
+        return ":".join(str(part) for part in ("api", data["host"].strip().lower(), data["port"], data["address"]))
     return ":".join(str(part) for part in (*bus_key(data), data["address"]))
 
 
 def schema(connection, data=None):
     data = data or {}
     fields = {vol.Required("name", default=data.get("name", "ABL Wallbox")): str}
-    if connection in ("tcp", "shelly"):
+    if connection in ("tcp", "shelly", "api"):
         fields.update(
             {
                 vol.Required("host", default=data.get("host", "")): str,
-                vol.Required("port", default=data.get("port", 80 if connection == "shelly" else DEFAULT_PORT)): vol.All(
+                vol.Required("port", default=data.get("port", 8080 if connection == "api" else 80 if connection == "shelly" else DEFAULT_PORT)): vol.All(
                     vol.Coerce(int), vol.Range(min=1, max=65535)
                 ),
             }
@@ -42,6 +46,9 @@ def schema(connection, data=None):
             }
         )
     fields[vol.Required("address", default=data.get("address", 1))] = vol.All(vol.Coerce(int), vol.Range(min=1, max=16))
+    if connection == "api":
+        fields[vol.Required("api_key", default=data.get("api_key", ""))] = selector.TextSelector(
+            selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD))
     if connection == "shelly":
         fields.update(
             {
@@ -77,7 +84,7 @@ class ABLConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
     async def _probe(self, data):
-        if data["connection_type"] in ("tcp", "shelly"):
+        if data["connection_type"] in ("tcp", "shelly", "api"):
             data["host"] = data["host"].strip()
             if not data["host"] or "://" in data["host"] or "/" in data["host"]:
                 raise ValueError("Enter the hostname or IP without http://")
@@ -88,7 +95,10 @@ class ABLConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         pool = self.hass.data.get(DOMAIN, {}).get(bus_key(data))
         bus = pool["bus"] if pool else make_bus(data)
         try:
-            await Controller(bus, data["address"]).refresh()
+            controller = make_controller(bus, data["address"])
+            await controller.refresh()
+            if data["connection_type"] == "api":
+                data["controller_id"] = controller.controller_id
         finally:
             if not pool:
                 await bus.close()
@@ -111,6 +121,8 @@ class ABLConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     await self.async_set_unique_id(endpoint_id(data))
                     self._abort_if_unique_id_configured()
                 await self._probe(data)
+            except APIAuthenticationError:
+                errors["base"] = "invalid_auth"
             except ControllerBusy:
                 errors["base"] = "bridge_busy"
             except (ABLError, OSError):
