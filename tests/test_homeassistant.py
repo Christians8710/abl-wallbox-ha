@@ -101,6 +101,16 @@ async def test_lowering_limit_reduces_target_value_and_its_maximum(hass):
     assert bus.state == 0xA1
 
 
+async def test_consecutive_current_commands_update_ha_immediately(hass):
+    entry, _bus = await setup_entry(hass)
+    target_id = entity_id(hass, entry, "number", "requested_current")
+    for amps in (10, 16):
+        await hass.services.async_call(
+            "number", "set_value", {"entity_id": target_id, "value": amps}, blocking=True
+        )
+        assert hass.states.get(target_id).state == str(amps)
+
+
 async def test_service_changes_bus_address_without_replacing_device(hass):
     entry, bus = await setup_entry(hass)
     original = entity_id(hass, entry, "number", "address")
