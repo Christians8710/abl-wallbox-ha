@@ -51,6 +51,7 @@ body.abl-app { margin: 0; }
 .abl-app input[type=range] { width: 100%; accent-color: var(--abl-accent); min-height: 36px; }
 .abl-app label { display: block; font-weight: 600; margin-bottom: 7px; }
 .abl-field { margin-bottom: 18px; min-width: 0; }
+.abl-app form + form { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--abl-border); }
 .abl-field small { display: block; margin-top: 6px; }
 .abl-check { display: flex !important; align-items: center; gap: 12px; min-height: 44px; font-weight: 400 !important; }
 .abl-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 18px; }
