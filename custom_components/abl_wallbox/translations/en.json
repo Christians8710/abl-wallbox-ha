@@ -1,0 +1,53 @@
+{
+  "title": "ABL Wallbox",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect ABL Wallbox",
+        "description": "Connect an EVCC2/3 controller using a transparent TCP bridge or a serial device. TCP requires host and port; leave the serial device empty. The RS485 side must use 38400 baud, 8E1. Release the connection in other applications. Setup only reads data; it does not change charging settings.",
+        "data": {
+          "name": "Name",
+          "connection_type": "Connection type",
+          "host": "Bridge hostname / IP address",
+          "port": "TCP port",
+          "device": "Serial device / RFC2217 URL",
+          "baudrate": "Serial baud rate",
+          "address": "Controller bus address"
+        }
+      },
+      "reconfigure": {
+        "title": "Change connection",
+        "description": "Connect an EVCC2/3 controller using a transparent TCP bridge or a serial device. TCP requires host and port; leave the serial device empty. The RS485 side must use 38400 baud, 8E1. Release the connection in other applications. Setup only reads data; it does not change charging settings.",
+        "data": {
+          "name": "Name",
+          "connection_type": "Connection type",
+          "host": "Bridge hostname / IP address",
+          "port": "TCP port",
+          "device": "Serial device / RFC2217 URL",
+          "baudrate": "Serial baud rate",
+          "address": "Controller bus address"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "No valid controller reply. Check the address, connection and physical serial settings.",
+      "bridge_busy": "Another program occupies the bridge. Disconnect the ABL PC software, COM redirector and other integrations.",
+      "invalid_connection": "Enter a hostname without http:// or a serial device path."
+    },
+    "abort": {
+      "already_configured": "This controller is already configured.",
+      "reconfigure_successful": "Connection updated."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Polling intervals",
+        "data": {
+          "scan_interval": "Status interval (seconds)",
+          "counter_interval": "Fault counter interval (seconds)"
+        }
+      }
+    }
+  }
+}
