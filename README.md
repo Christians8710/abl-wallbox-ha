@@ -21,7 +21,9 @@ Die Einstellungen des Charge-Controller-Bereichs der ABL Configuration Software 
 
 - **TCP:** transparente Übertragung von ABL Modbus **ASCII**. Host und TCP-Port der Brücke angeben. Die physische RS485-Seite der Brücke auf **38400 Baud, 8 Datenbits, gerade Parität, 1 Stoppbit (8E1)** stellen.
 - **USB/seriell:** stabiles Gerät wie `/dev/serial/by-id/...` verwenden. RFC2217 wird über einen entsprechenden `rfc2217://...`-Gerätepfad unterstützt.
+- **Shelly Pro RS485 Add-on:** eigener Zugangsweg über das mitgelieferte [UART-Brückenskript](shelly/README.md), inklusive Unterstützung der vorhandenen Shelly-Digest-Authentifizierung. Der native Modbus-RTU-Modus wird dafür nicht verwendet.
 - Die Integration ist unabhängig vom Einplatinencomputer. Beispielsweise kann ein Tinker Board mit `ser2net` als transparente Brücke dienen. Auch andere serielle Netzwerkserver benötigen einen transparenten Modus; eine reine Modbus-TCP-zu-Modbus-RTU-Umsetzung funktioniert mit dem ABL-ASCII-Protokoll nicht.
+- Ein Coolwell-RS485/Ethernet-Konverter ist über den TCP-Zugangsweg nutzbar, sofern sein transparenter TCP-Server-Modus das ASCII-Protokoll unverändert weiterleitet. Die Modellbezeichnung allein ersetzt diese notwendige Betriebsart nicht; dieser Adapter wurde nicht physisch getestet.
 - Nur eine Anwendung darf die Brücke belegen. Vor der Einrichtung die ABL-PC-Software, virtuelle COM-Umleitungen und andere ABL-Integrationen vom selben Anschluss trennen. Mehrere Controller an einem Bus teilen sich innerhalb dieser Integration eine Verbindung.
 
 ## Installation über HACS
