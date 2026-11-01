@@ -67,8 +67,10 @@ async def test_shelly_sha256_digest_authentication():
             fields = urllib.request.parse_keqv_list(
                 urllib.request.parse_http_list(authorization.removeprefix("Digest "))
             )
+
             def digest(value):
                 return hashlib.sha256(value.encode()).hexdigest()
+
             a1 = digest("admin:shelly-test:example-password")
             a2 = digest("POST:" + fields["uri"])
             expected = digest(f"{a1}:test-nonce:{fields['nc']}:{fields['cnonce']}:auth:{a2}")

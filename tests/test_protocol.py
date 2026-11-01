@@ -175,6 +175,32 @@ async def test_configuration_preserves_disabled_outlet():
     assert bus.writes[-1] == (5, 0xE0E0)
 
 
+async def test_acknowledged_state_transitions_can_be_delayed():
+    class DelayedBus(SimulatedBus):
+        pending = None
+        reads = 0
+
+        async def write(self, address, register, value):
+            if register == 5 and value in (0xE2E2, 0xA1A1, 0xE0E0):
+                self.writes.append((register, value))
+                self.pending = value & 255
+                self.reads = 0
+                return struct.pack(">HH", register, 1)
+            return await super().write(address, register, value)
+
+        async def read(self, address, register, count, **kwargs):
+            if register == 4 and self.pending is not None:
+                self.reads += 1
+                if self.reads >= 2:
+                    self.state = self.pending
+                    self.pending = None
+            return await super().read(address, register, count, **kwargs)
+
+    bus = DelayedBus()
+    await p.Controller(bus).configure(installation_limit=16)
+    assert bus.state == 0xA1
+
+
 async def test_installation_limit_may_not_exceed_hardware_rating():
     bus = SimulatedBus()
     with pytest.raises(ValueError):
