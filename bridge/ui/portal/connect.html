@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Verbindung wird aufgebaut{% endblock %}
+{% block content %}
+<section class="abl-card"><span class="abl-badge">Verbindung angefordert</span>
+  <h2 style="margin-top:18px">Das Board verbindet sich</h2><p class="abl-status">{{ ssid }}</p>
+  <p role="status">Die Verbindung wird aufgebaut. Eine erfolgreiche WLAN-Verbindung kann diese Seite noch nicht bestätigen.</p>
+  <p class="abl-muted">Verbinde dein Handy wieder mit deinem Heim-WLAN und öffne anschließend die Statusseite der Brücke.</p>
+</section>
+<aside class="abl-card"><h2>Status prüfen</h2><p>Im Heimnetz erreichst du das Board über seine IP-Adresse oder über:</p>
+  <a class="abl-button" href="http://abl-bridge.local:8080">Statusseite öffnen</a>
+  <p class="abl-muted" style="margin-top:16px">Falls die Verbindung nicht gelingt, wird die Einrichtung erneut angeboten. Du kannst dein WLAN und Passwort dann prüfen.</p>
+</aside>
+{% endblock %}

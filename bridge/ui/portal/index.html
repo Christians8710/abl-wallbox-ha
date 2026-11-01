@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="abl-card"><h2>WLAN auswählen</h2>
+  <p class="abl-muted">Wähle dein Netzwerk aus der Liste.</p>
+  {% for point in points %}
+    <a class="abl-network" href="/confirm?ssid={{ point.ssid_encoded }}&amp;encrypted={{ point.security }}">
+      <span>{{ point.ssid }}</span><small>{% if point.security == 'encrypted' %}Geschützt{% else %}Offen{% endif %} →</small>
+    </a>
+  {% else %}
+    <p class="abl-notice">Noch kein WLAN gefunden. Prüfe die Reichweite und lade die Liste erneut.</p>
+  {% endfor %}
+  <div class="abl-actions"><a class="abl-button" href="/">Liste aktualisieren</a></div>
+</section>
+<aside class="abl-stack">
+  <section class="abl-card"><h2>Netzwerk nicht gefunden?</h2>
+    <details><summary>WLAN-Namen manuell eingeben</summary>
+      <form action="/confirm" method="get"><input type="hidden" name="encrypted" value="encrypted">
+        <div class="abl-field"><label for="ssid">WLAN-Name (SSID)</label><input id="ssid" name="ssid" type="text" required autocomplete="off" maxlength="32"></div>
+        <button class="abl-primary" type="submit">Weiter</button>
+      </form>
+    </details>
+    <p class="abl-muted">Das eingebaute WLAN des Tinker Boards benötigt ein 2,4-GHz-Netz.</p>
+  </section>
+  {% if can_blink %}<section class="abl-card"><h2>Board finden</h2><button type="button" id="locate">Board blinken lassen</button><p id="locate-status" role="status" aria-live="polite"></p></section>{% endif %}
+</aside>
+{% endblock %}

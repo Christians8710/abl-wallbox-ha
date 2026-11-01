@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Mit WLAN verbinden{% endblock %}
+{% block content %}
+<section class="abl-card"><h2>Mit WLAN verbinden</h2><p class="abl-status">{{ ssid }}</p>
+  <form action="/connect" method="post" id="wifi-form">
+    <input type="hidden" name="ssid" value="{{ ssid_encoded }}">
+    <div class="abl-field"><label for="password">WLAN-Passwort{% if encrypted != 'encrypted' %} (falls erforderlich){% endif %}</label>
+      <input id="password" type="password" name="password" autocomplete="new-password" aria-describedby="password-help">
+      <small id="password-help">{% if encrypted == 'encrypted' %}Gib das Passwort deines WLANs ein.{% else %}Bei einem offenen WLAN bleibt das Feld leer.{% endif %}</small>
+    </div>
+    <label class="abl-check"><input type="checkbox" id="show-password">Passwort anzeigen</label>
+    <div class="abl-actions"><button class="abl-primary" type="submit">Mit WLAN verbinden</button><a class="abl-button" href="/">Zurück</a></div>
+    <p id="submit-status" role="status" aria-live="polite"></p>
+  </form>
+</section>
+<aside class="abl-card"><h2>So geht es weiter</h2>
+  {% if mode == 'single' %}<p>Während das Board die Verbindung aufbaut, wird der Einrichtungs-Hotspot beendet.</p>
+  {% else %}<p>Während das Board die Verbindung aufbaut, wird diese Einrichtungsseite beendet.</p>{% endif %}
+  <p>Verbinde dein Handy danach wieder mit deinem Heim-WLAN. Bei einem Verbindungsfehler wird die Einrichtung erneut angeboten.</p>
+  {% if can_blink %}<button type="button" id="locate">Board blinken lassen</button><p id="locate-status" role="status" aria-live="polite"></p>{% endif %}
+</aside>
+{% endblock %}
