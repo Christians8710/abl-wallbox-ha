@@ -176,7 +176,10 @@ async def test_reconfigure_tcp_to_api_preserves_all_entity_and_device_ids(hass, 
     registry = er.async_get(hass)
     original_entities = {(item.unique_id, item.entity_id, item.device_id) for item in er.async_entries_for_config_entry(registry, entry.entry_id)}
     assert len(original_entities) == 50
-    original_device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, entry.entry_id)})
+    original_device_ids = {item[2] for item in original_entities}
+    assert len(original_device_ids) == 1
+    original_device = dr.async_get(hass).devices[next(iter(original_device_ids))]
+    original_identifiers = set(original_device.identifiers)
     history = {'time': '2026-01-01T00:00:00+00:00', 'type': 'observed_fault', 'code': 'F3', 'description': 'Test history'}
     entry.runtime_data.history.append(history)
     await entry.runtime_data._store.async_save(entry.runtime_data._storage_data())
@@ -198,7 +201,7 @@ async def test_reconfigure_tcp_to_api_preserves_all_entity_and_device_ids(hass, 
         assert len(hass.data[DOMAIN]) == 1
         assert entry.data['connection_type'] == 'api' and entry.data['controller_id'] == runtime.controller_id
         assert {(item.unique_id, item.entity_id, item.device_id) for item in er.async_entries_for_config_entry(registry, entry.entry_id)} == original_entities
-        assert dr.async_get(hass).async_get_device(identifiers={(DOMAIN, entry.entry_id)}).id == original_device.id
+        assert dr.async_get(hass).devices[original_device.id].identifiers == original_identifiers
         assert history in entry.runtime_data.history
         assert bus.writes == []
         target_id = entity_id(hass, entry, 'number', 'requested_current')
