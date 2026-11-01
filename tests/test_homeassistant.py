@@ -99,19 +99,20 @@ async def test_service_changes_bus_address_without_replacing_device(hass):
 
 async def test_config_flow_uses_read_only_probe(hass):
     bus = FakeBus()
-    with patch("custom_components.abl_wallbox.config_flow.Bus", return_value=bus):
+    with patch("custom_components.abl_wallbox.config_flow.make_bus", return_value=bus):
         result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": "user"})
         assert result["type"] == "form"
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], user_input={"connection_type": "tcp"}
+        )
+        assert result["step_id"] == "connection"
         with patch("custom_components.abl_wallbox.async_setup_entry", return_value=True):
             result = await hass.config_entries.flow.async_configure(
                 result["flow_id"],
                 user_input={
                     "name": "ABL Test",
-                    "connection_type": "tcp",
                     "host": "127.0.0.1",
                     "port": 5020,
-                    "device": "",
-                    "baudrate": 38400,
                     "address": 1,
                 },
             )
