@@ -1,0 +1,75 @@
+configure_controller:
+  name: Controller konfigurieren
+  description: Ändert feste Controller-Einstellungen wie in der ABL-Software. Nur ohne angeschlossenes Fahrzeug; bestehende Ladefreigabe wird wiederhergestellt. Es gelten die Grenzen der Installation.
+  fields:
+    config_entry_id:
+      name: Wallbox
+      required: true
+      selector:
+        config_entry:
+          integration: abl_wallbox
+    installation_limit:
+      name: Feste Stromgrenze
+      description: Obergrenze der Installation in Ampere, höchstens Nennstrom der Wallbox.
+      selector:
+        number:
+          min: 6
+          max: 80
+          unit_of_measurement: A
+          mode: box
+    address:
+      name: Neue Busadresse
+      selector:
+        number:
+          min: 1
+          max: 16
+          mode: box
+    mode:
+      name: Betriebsart
+      selector:
+        select:
+          options:
+            - standalone
+            - rfid
+            - sbc
+    imbalance:
+      name: Schieflasterkennung
+      selector:
+        select:
+          options:
+            - 'off'
+            - '16'
+            - '20'
+    fallback_enabled:
+      name: Fallback bei Steuerungsausfall
+      selector:
+        boolean:
+    start_on_boot:
+      name: Ladefreigabe nach Neustart
+      selector:
+        boolean:
+clear_fault_counters:
+  name: Fehlerzähler der Wallbox löschen
+  description: Löscht die Fehlerzähler dauerhaft im Controller. Der in HA beobachtete Fehlerverlauf bleibt erhalten. Nur ohne angeschlossenes Fahrzeug.
+  fields:
+    config_entry_id:
+      name: Wallbox
+      required: true
+      selector:
+        config_entry:
+          integration: abl_wallbox
+    confirm:
+      name: Dauerhaftes Löschen bestätigen
+      required: true
+      selector:
+        boolean:
+scan_bus:
+  name: Controller am Bus suchen
+  description: Sucht die Adressen 1 bis 16 über die bestehende Verbindung. Ändert keine Controller-Einstellung. Ergebnis wird als Antwort zurückgegeben.
+  fields:
+    config_entry_id:
+      name: Verbindung der Wallbox
+      required: true
+      selector:
+        config_entry:
+          integration: abl_wallbox

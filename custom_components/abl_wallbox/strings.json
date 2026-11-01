@@ -1,0 +1,20 @@
+{
+  "title": "ABL Wallbox",
+  "config": {
+    "step": {
+      "user": {
+        "title": "ABL Wallbox verbinden",
+        "description": "Verbindet einen EVCC2/3-Controller per transparenter TCP-Brücke oder seriell. Bei TCP nur Host und Port ausfüllen; das serielle Gerät bleibt leer. RS485 benötigt 38400 Baud, 8E1. Andere Programme müssen dieselbe Verbindung freigeben. Beim Einrichten werden keine Ladeeinstellungen geschrieben.",
+        "data": {"name": "Name", "connection_type": "Verbindungsart", "host": "Host / IP-Adresse der Brücke", "port": "TCP-Port", "device": "Serielles Gerät / RFC2217-URL", "baudrate": "Serielle Baudrate", "address": "Controller-Busadresse"}
+      },
+      "reconfigure": {
+        "title": "Verbindung ändern",
+        "description": "Ändert den Zugang zur vorhandenen Wallbox. Die Busadresse hier muss der tatsächlich im Controller gespeicherten Adresse entsprechen. Um die Adresse des Controllers selbst zu ändern, verwende die Busadresse-Entität oder die Aktion Controller konfigurieren.",
+        "data": {"name": "Name", "connection_type": "Verbindungsart", "host": "Host / IP-Adresse", "port": "TCP-Port", "device": "Serielles Gerät / RFC2217-URL", "baudrate": "Baudrate", "address": "Vorhandene Controller-Busadresse"}
+      }
+    },
+    "error": {"cannot_connect": "Keine gültige Antwort der Wallbox. Prüfe Host, Port, Busadresse und 38400 Baud / 8E1 sowie andere Programme an derselben Brücke.", "bridge_busy": "Die Brücke wird von einem anderen Programm verwendet. ABL-Software, COM-Umleitung und alte HA-Integration müssen die Verbindung freigeben.", "invalid_connection": "Bitte einen Host ohne http:// oder ein serielles Gerät angeben."},
+    "abort": {"already_configured": "Dieser Controller ist bereits eingerichtet.", "reconfigure_successful": "Verbindung aktualisiert."}
+  },
+  "options": {"step": {"init": {"title": "Abfrageintervalle", "data": {"scan_interval": "Statusabfrage (Sekunden)", "counter_interval": "Fehlerzähler auslesen (Sekunden)"}}}}
+}
