@@ -56,7 +56,7 @@ Die Aktionen `abl_wallbox.configure_controller`, `abl_wallbox.scan_bus` und `abl
 
 ## Unterstützte und geprüfte Hardware
 
-Das Protokoll richtet sich an ABL EVCC2/3. Die erste Live-Prüfung erfolgt an einer eMH1 1W2208, PCBA 160307, Firmware 4.1. Weitere Controller werden anhand ihrer Firmwaredaten erkannt; nicht unterstützte Schreibbefehle führen zu einer Fehlermeldung statt einer Erfolgsmeldung. Geräte wie eM4 verwenden andere Schnittstellen.
+Das Protokoll richtet sich an ABL EVCC2/3. Live geprüft sind TCP-Kommunikation, Status- und Fehlerzählerabfragen sowie das Schreiben der vorhandenen Stromgrenze, Betriebsart und Schieflastgrenze an einer eMH1 1W2208, PCBA 160307, Firmware 4.1. Der Schreibtest stellt die ursprüngliche Ladefreigabe und Ladestromvorgabe wieder her und prüft, dass alle Einstellungen und Fehlerzähler erhalten geblieben sind. Weitere Controller werden anhand ihrer Firmwaredaten erkannt; nicht unterstützte Schreibbefehle führen zu einer Fehlermeldung statt einer Erfolgsmeldung. Geräte wie eM4 verwenden andere Schnittstellen.
 
 ## Entwicklung
 
