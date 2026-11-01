@@ -1,0 +1,12 @@
+# First register /local/abl-wallbox/abl-wallbox-card.js as a JavaScript module.
+title: ABL Wallbox
+views:
+  - title: Wallbox
+    path: wallbox
+    icon: mdi:ev-station
+    type: panel
+    cards:
+      - type: custom:abl-wallbox-card
+        title: ABL Wallbox
+        # Optional for several wallboxes; otherwise select in the card:
+        # config_entry_id: YOUR_ABL_CONFIG_ENTRY_ID
