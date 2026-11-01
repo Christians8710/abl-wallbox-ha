@@ -350,6 +350,25 @@ class Controller:
     async def _state(self) -> int:
         return (await self.bus.read(self.address, 4, 1))[1]
 
+    async def _wait_state(self, expected: int) -> None:
+        deadline = time.monotonic() + 3
+        while True:
+            if await self._state() == expected:
+                return
+            if time.monotonic() >= deadline:
+                raise ControllerBusy(f"Controller did not reach state {state_name(expected)}")
+            await asyncio.sleep(0.1)
+
+    async def _wait_limits(self, check, message: str) -> Limits:
+        deadline = time.monotonic() + 3
+        while True:
+            limits = await self._limits()
+            if check(limits):
+                return limits
+            if time.monotonic() >= deadline:
+                raise ABLError(message)
+            await asyncio.sleep(0.1)
+
     async def _limits(self) -> Limits:
         self.limits = Limits.parse(await self.bus.read(self.address, 15, 5))
         return self.limits
@@ -425,9 +444,9 @@ class Controller:
                 raise ValueError(f"Current must be 0 or 6..{min(limit.rated, limit.installation)} A")
             pwm = 1000 if amps == 0 else amps_to_pwm(amps)
             await self.bus.write(self.address, 20, pwm)
-            actual = await self._limits()
-            if actual.requested != amps:
-                raise ABLError("Controller did not confirm the requested charging current")
+            await self._wait_limits(
+                lambda limits: limits.requested == amps, "Controller did not confirm the requested charging current"
+            )
 
     async def set_enabled(self, enabled: bool) -> None:
         async with self._lock:
@@ -435,9 +454,11 @@ class Controller:
             if (enabled and current >> 4 in (10, 11, 12)) or (not enabled and current == 0xE0):
                 return
             await self.bus.write(self.address, 5, 0xA1A1 if enabled else 0xE0E0)
-            state = await self._state()
-            if (state >> 4 in (10, 11, 12)) != enabled:
-                raise ABLError("Controller did not confirm the charging enable state")
+            deadline = time.monotonic() + 3
+            while ((await self._state()) >> 4 in (10, 11, 12)) != enabled:
+                if time.monotonic() >= deadline:
+                    raise ABLError("Controller did not confirm the charging enable state")
+                await asyncio.sleep(0.1)
 
     async def configure(self, **settings: Any) -> None:
         """Apply the same setting groups as the ABL tool, preserving the prior enable state."""
@@ -471,12 +492,13 @@ class Controller:
             try:
                 await self.bus.write(self.address, 5, 0xE2E2)
                 entered = True
-                if await self._state() != 0xE2:
-                    raise ControllerBusy("Controller did not enter setup mode E2")
+                await self._wait_state(0xE2)
                 if "installation_limit" in settings:
                     await self.bus.write(self.address, 45, amps_to_pwm(settings["installation_limit"]))
-                    if (await self._limits()).installation != settings["installation_limit"]:
-                        raise ABLError("Installation current limit was not confirmed")
+                    await self._wait_limits(
+                        lambda limits: limits.installation == settings["installation_limit"],
+                        "Installation current limit was not confirmed",
+                    )
                 if "imbalance" in settings:
                     threshold = settings["imbalance"]
                     if self.version.new_api:
@@ -485,11 +507,13 @@ class Controller:
                         )
                     else:
                         await self.bus.write(self.address, 5, 0x3030 if threshold == "off" else 0x3838)
-                    actual = await self._limits()
-                    if actual.imbalance_enabled != (threshold != "off") or (
-                        threshold != "off" and actual.imbalance_limit != int(threshold)
-                    ):
-                        raise ABLError("Phase imbalance setting was not confirmed")
+                    await self._wait_limits(
+                        lambda limits: (
+                            limits.imbalance_enabled == (threshold != "off")
+                            and (threshold == "off" or limits.imbalance_limit == int(threshold))
+                        ),
+                        "Phase imbalance setting was not confirmed",
+                    )
                 if "mode" in settings:
                     mode = settings["mode"]
                     if mode == "sbc":
@@ -530,8 +554,7 @@ class Controller:
                 if entered:
                     restore = 0xE0E0 if old_state == 0xE0 else (0xE2E2 if old_state == 0xE2 else 0xA1A1)
                     await self.bus.write(self.address, 5, restore)
-                    if await self._state() != old_state:
-                        raise ABLError("Controller enable state could not be restored after configuration")
+                    await self._wait_state(old_state)
             # Verify mode/fallback settings after leaving setup mode.
             self.version = Version.parse(await self.bus.read(self.address, 1, 2))
             flags = int.from_bytes((await self.bus.read(self.address, 6, 2))[2:], "big")
