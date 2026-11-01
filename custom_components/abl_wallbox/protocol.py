@@ -13,6 +13,8 @@ import math
 import struct
 import time
 from typing import Any
+import urllib.error
+import urllib.request
 
 _LOGGER = logging.getLogger(__name__)
 TIMEOUT = 1.2
@@ -275,6 +277,64 @@ class Bus:
 
     async def write(self, address: int, register: int, value: int) -> bytes:
         return await self._exchange(address, register, value=value)
+
+
+class ShellyBus(Bus):
+    """ABL ASCII over the bundled Shelly UART/HTTP bridge script.
+
+    Shelly's native Modbus RTU component cannot decode ABL's ASCII replies.
+    HTTP Digest authentication is handled off the HA event loop.
+    """
+
+    def __init__(
+        self,
+        host: str,
+        port: int = 80,
+        script_id: int = 1,
+        username: str = "admin",
+        password: str = "",
+        timeout: float = 2.0,
+    ):
+        super().__init__("shelly", host=host, port=port, timeout=timeout)
+        if not 1 <= script_id <= 999:
+            raise ValueError("Invalid Shelly script ID")
+        hostname = f"[{host}]" if ":" in host and not host.startswith("[") else host
+        self._url = f"http://{hostname}:{port}/script/{script_id}/abl"
+        self._username, self._password = username, password
+        self._reply = b""
+
+    async def _open(self) -> None:
+        return
+
+    async def close(self) -> None:
+        self._reply = b""
+
+    def _post(self, request: bytes) -> bytes:
+        manager = urllib.request.HTTPPasswordMgrWithDefaultRealm()
+        manager.add_password(None, self._url, self._username, self._password)
+        opener = urllib.request.build_opener(urllib.request.HTTPDigestAuthHandler(manager))
+        message = urllib.request.Request(self._url, data=request, method="POST", headers={"Content-Type": "text/plain"})
+        try:
+            with opener.open(message, timeout=self.timeout) as response:
+                return response.read(1024)
+        except urllib.error.HTTPError as err:
+            if err.code in (409, 503):
+                raise ControllerBusy("Shelly UART is busy or the bridge script is not ready") from err
+            if err.code in (401, 403):
+                raise DeviceRejected("Shelly authentication failed") from err
+            if err.code == 504:
+                raise OSError("Shelly received no UART response") from err
+            raise DeviceRejected(f"Shelly bridge returned HTTP {err.code}") from err
+
+    async def _send(self, request: bytes) -> None:
+        self._reply = await asyncio.to_thread(self._post, request)
+
+    async def _line(self, timeout: float) -> bytes:
+        if not self._reply:
+            raise asyncio.TimeoutError()
+        line, separator, remaining = self._reply.partition(b"\n")
+        self._reply = remaining
+        return line + separator
 
 
 class Controller:

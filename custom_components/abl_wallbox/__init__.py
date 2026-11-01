@@ -10,15 +10,35 @@ from homeassistant.helpers import config_validation as cv
 
 from .const import DOMAIN, PLATFORMS
 from .coordinator import ABLCoordinator
-from .protocol import ABLError, Bus, Controller
+from .protocol import ABLError, Bus, Controller, ShellyBus
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 def bus_key(data: dict) -> tuple:
     if data["connection_type"] == "tcp":
-        return ("tcp", data["host"].lower(), data["port"])
-    return ("serial", data["device"], data.get("baudrate", 38400))
+        return ("tcp", data["host"].strip().lower(), data["port"])
+    if data["connection_type"] == "shelly":
+        return ("shelly", data["host"].strip().lower(), data.get("port", 80), data.get("script_id", 1))
+    return ("serial", data["device"].strip(), data.get("baudrate", 38400))
+
+
+def make_bus(data: dict) -> Bus:
+    if data["connection_type"] == "shelly":
+        return ShellyBus(
+            data["host"],
+            port=data.get("port", 80),
+            script_id=data.get("script_id", 1),
+            username=data.get("username", "admin"),
+            password=data.get("password", ""),
+        )
+    return Bus(
+        data["connection_type"],
+        host=data.get("host", ""),
+        port=data.get("port", 5020),
+        device=data.get("device", ""),
+        baudrate=data.get("baudrate", 38400),
+    )
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -27,13 +47,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if key not in pools:
         data = entry.data
         pools[key] = {
-            "bus": Bus(
-                data["connection_type"],
-                host=data.get("host", ""),
-                port=data.get("port", 5020),
-                device=data.get("device", ""),
-                baudrate=data.get("baudrate", 38400),
-            ),
+            "bus": make_bus(data),
             "users": set(),
         }
     pool = pools[key]

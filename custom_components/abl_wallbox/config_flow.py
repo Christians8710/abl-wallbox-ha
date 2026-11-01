@@ -1,83 +1,116 @@
-"""UI setup, connection changes, and polling options."""
+"""Connection-specific UI setup; initial probes never change the controller."""
 
 from __future__ import annotations
 
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
+from homeassistant.helpers import selector
 
-from . import bus_key
+from . import bus_key, make_bus
 from .const import DEFAULT_INTERVAL, DEFAULT_PORT, DOMAIN
-from .protocol import ABLError, Bus, Controller, ControllerBusy
+from .protocol import ABLError, Controller, ControllerBusy
+
+CONNECTIONS = {
+    "tcp": "TCP / Netzwerkbrücke",
+    "serial": "USB / seriell / RFC2217",
+    "shelly": "Shelly Pro RS485 (UART-Skript)",
+}
 
 
 def endpoint_id(data):
     return ":".join(str(part) for part in (*bus_key(data), data["address"]))
 
 
-def schema(data=None):
+def schema(connection, data=None):
     data = data or {}
-    return vol.Schema(
-        {
-            vol.Required("name", default=data.get("name", "ABL Wallbox")): str,
-            vol.Required("connection_type", default=data.get("connection_type", "tcp")): vol.In(
-                {"tcp": "TCP / Netzwerkbrücke", "serial": "USB / seriell / RFC2217"}
-            ),
-            vol.Optional("host", default=data.get("host", "")): str,
-            vol.Optional("port", default=data.get("port", DEFAULT_PORT)): vol.All(
-                vol.Coerce(int), vol.Range(min=1, max=65535)
-            ),
-            vol.Optional("device", default=data.get("device", "")): str,
-            vol.Optional("baudrate", default=data.get("baudrate", 38400)): vol.In([9600, 19200, 38400, 57600]),
-            vol.Required("address", default=data.get("address", 1)): vol.All(vol.Coerce(int), vol.Range(min=1, max=16)),
-        }
-    )
+    fields = {vol.Required("name", default=data.get("name", "ABL Wallbox")): str}
+    if connection in ("tcp", "shelly"):
+        fields.update(
+            {
+                vol.Required("host", default=data.get("host", "")): str,
+                vol.Required("port", default=data.get("port", 80 if connection == "shelly" else DEFAULT_PORT)): vol.All(
+                    vol.Coerce(int), vol.Range(min=1, max=65535)
+                ),
+            }
+        )
+    else:
+        fields.update(
+            {
+                vol.Required("device", default=data.get("device", "")): str,
+                vol.Required("baudrate", default=data.get("baudrate", 38400)): vol.In([9600, 19200, 38400, 57600]),
+            }
+        )
+    fields[vol.Required("address", default=data.get("address", 1))] = vol.All(vol.Coerce(int), vol.Range(min=1, max=16))
+    if connection == "shelly":
+        fields.update(
+            {
+                vol.Required("script_id", default=data.get("script_id", 1)): vol.All(
+                    vol.Coerce(int), vol.Range(min=1, max=999)
+                ),
+                vol.Optional("username", default=data.get("username", "admin")): str,
+                vol.Optional("password", default=data.get("password", "")): selector.TextSelector(
+                    selector.TextSelectorConfig(type=selector.TextSelectorType.PASSWORD)
+                ),
+            }
+        )
+    return vol.Schema(fields)
 
 
 class ABLConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
+    _connection_type = "tcp"
+    _reconfiguring = False
 
     @staticmethod
     @callback
     def async_get_options_flow(config_entry):
         return ABLOptionsFlow()
 
-    async def _probe(self, data):
-        if data["connection_type"] == "tcp":
-            data["host"] = data.get("host", "").strip()
-            if not data["host"] or "://" in data["host"] or "/" in data["host"]:
-                raise ValueError("Enter the bridge hostname or IP without an http:// prefix")
-        elif not data.get("device", "").strip():
-            raise ValueError("Enter the serial device path or RFC2217 URL")
-        pool = self.hass.data.get(DOMAIN, {}).get(bus_key(data))
-        bus = (
-            pool["bus"]
-            if pool
-            else Bus(
-                data["connection_type"],
-                host=data.get("host", ""),
-                port=data.get("port", DEFAULT_PORT),
-                device=data.get("device", ""),
-                baudrate=data.get("baudrate", 38400),
-            )
+    async def async_step_user(self, user_input=None):
+        if user_input is not None:
+            self._connection_type = user_input["connection_type"]
+            return await self.async_step_connection()
+        return self.async_show_form(
+            step_id="user",
+            data_schema=vol.Schema({vol.Required("connection_type", default="tcp"): vol.In(CONNECTIONS)}),
         )
+
+    async def _probe(self, data):
+        if data["connection_type"] in ("tcp", "shelly"):
+            data["host"] = data["host"].strip()
+            if not data["host"] or "://" in data["host"] or "/" in data["host"]:
+                raise ValueError("Enter the hostname or IP without http://")
+        else:
+            data["device"] = data["device"].strip()
+            if not data["device"]:
+                raise ValueError("Enter the serial device path or RFC2217 URL")
+        pool = self.hass.data.get(DOMAIN, {}).get(bus_key(data))
+        bus = pool["bus"] if pool else make_bus(data)
         try:
             await Controller(bus, data["address"]).refresh()
         finally:
             if not pool:
                 await bus.close()
 
-    async def async_step_user(self, user_input=None):
+    async def async_step_connection(self, user_input=None):
         errors = {}
+        current = self._get_reconfigure_entry() if self._reconfiguring else None
+        defaults = dict(current.data) if current else {}
+        if current and self._connection_type != current.data["connection_type"]:
+            defaults.pop("port", None)
         if user_input is not None:
+            data = {**user_input, "connection_type": self._connection_type}
             try:
-                unique_id = endpoint_id(user_input)
-                await self.async_set_unique_id(unique_id)
-                self._abort_if_unique_id_configured()
                 for entry in self.hass.config_entries.async_entries(DOMAIN):
-                    if endpoint_id(entry.data) == unique_id:
+                    if (not current or entry.entry_id != current.entry_id) and endpoint_id(entry.data) == endpoint_id(
+                        data
+                    ):
                         return self.async_abort(reason="already_configured")
-                await self._probe(user_input)
+                if not current:
+                    await self.async_set_unique_id(endpoint_id(data))
+                    self._abort_if_unique_id_configured()
+                await self._probe(data)
             except ControllerBusy:
                 errors["base"] = "bridge_busy"
             except (ABLError, OSError):
@@ -85,27 +118,26 @@ class ABLConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except ValueError:
                 errors["base"] = "invalid_connection"
             else:
-                return self.async_create_entry(title=user_input["name"], data=user_input)
-        return self.async_show_form(step_id="user", data_schema=schema(user_input), errors=errors)
+                if current:
+                    self.hass.config_entries.async_update_entry(current, title=data["name"])
+                    return self.async_update_reload_and_abort(current, data_updates=data)
+                return self.async_create_entry(title=data["name"], data=data)
+        return self.async_show_form(
+            step_id="connection", data_schema=schema(self._connection_type, user_input or defaults), errors=errors
+        )
 
     async def async_step_reconfigure(self, user_input=None):
         entry = self._get_reconfigure_entry()
-        errors = {}
+        self._reconfiguring = True
         if user_input is not None:
-            try:
-                for other in self.hass.config_entries.async_entries(DOMAIN):
-                    if other.entry_id != entry.entry_id and endpoint_id(other.data) == endpoint_id(user_input):
-                        return self.async_abort(reason="already_configured")
-                await self._probe(user_input)
-            except ControllerBusy:
-                errors["base"] = "bridge_busy"
-            except (ABLError, OSError):
-                errors["base"] = "cannot_connect"
-            except ValueError:
-                errors["base"] = "invalid_connection"
-            else:
-                return self.async_update_reload_and_abort(entry, data_updates=user_input)
-        return self.async_show_form(step_id="reconfigure", data_schema=schema(user_input or entry.data), errors=errors)
+            self._connection_type = user_input["connection_type"]
+            return await self.async_step_connection()
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=vol.Schema(
+                {vol.Required("connection_type", default=entry.data["connection_type"]): vol.In(CONNECTIONS)}
+            ),
+        )
 
 
 class ABLOptionsFlow(config_entries.OptionsFlow):
