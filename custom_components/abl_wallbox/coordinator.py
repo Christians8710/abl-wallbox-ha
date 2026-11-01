@@ -99,7 +99,7 @@ class ABLCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             await command
         except (ABLError, ValueError, OSError) as err:
             raise HomeAssistantError(str(err)) from err
-        await self.async_request_refresh()
+        await self.async_refresh()
 
     async def async_configure(self, **settings: Any) -> None:
         new_address = settings.get("address", self.controller.address)
@@ -130,8 +130,8 @@ class ABLCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 self.hass.config_entries.async_update_entry(
                     self.entry, data={**self.entry.data, "address": self.controller.address}
                 )
-            await self.async_request_refresh()
+            await self.async_refresh()
 
     async def async_refresh_counters(self) -> None:
         self._counter_time = None
-        await self.async_request_refresh()
+        await self.async_refresh()
