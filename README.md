@@ -1,5 +1,7 @@
 # ABL Wallbox für Home Assistant
 
+<img src="custom_components/abl_wallbox/brand/icon.png" alt="ABL Wallbox Logo" width="160">
+
 Lokale, kostenlose HACS-Integration für ABL eMH1 mit EVCC2/3-Controller. Steuert die Wallbox direkt über USB/RS485 oder eine transparente Netzwerkbrücke. Kein MQTT und keine Cloud erforderlich.
 
 ## Funktionen
