@@ -3,29 +3,32 @@
   "config": {
     "step": {
       "user": {
-        "title": "Connect ABL Wallbox",
-        "description": "Connect an EVCC2/3 controller using a transparent TCP bridge or a serial device. TCP requires host and port; leave the serial device empty. The RS485 side must use 38400 baud, 8E1. Release the connection in other applications. Setup only reads data; it does not change charging settings.",
+        "title": "Choose connection",
+        "description": "Choose how the wallbox is connected. Setup only reads values and does not change charging settings.",
         "data": {
-          "name": "Name",
-          "connection_type": "Connection type",
-          "host": "Bridge hostname / IP address",
-          "port": "TCP port",
-          "device": "Serial device / RFC2217 URL",
-          "baudrate": "Serial baud rate",
-          "address": "Controller bus address"
+          "connection_type": "Connection type"
         }
       },
       "reconfigure": {
         "title": "Change connection",
-        "description": "Connect an EVCC2/3 controller using a transparent TCP bridge or a serial device. TCP requires host and port; leave the serial device empty. The RS485 side must use 38400 baud, 8E1. Release the connection in other applications. Setup only reads data; it does not change charging settings.",
+        "description": "Choose the connection type, then update its details. This does not change the bus address stored in the controller.",
+        "data": {
+          "connection_type": "Connection type"
+        }
+      },
+      "connection": {
+        "title": "Connect ABL Wallbox",
+        "description": "Enter the connection details. RS485 uses 38400 baud, 8E1. Shelly requires the supplied UART bridge script; its HTTP port is usually 80.",
         "data": {
           "name": "Name",
-          "connection_type": "Connection type",
-          "host": "Bridge hostname / IP address",
-          "port": "TCP port",
+          "host": "Host / IP address",
+          "port": "TCP / HTTP port",
           "device": "Serial device / RFC2217 URL",
-          "baudrate": "Serial baud rate",
-          "address": "Controller bus address"
+          "baudrate": "Baud rate",
+          "address": "Controller bus address",
+          "script_id": "Shelly script ID",
+          "username": "Shelly user",
+          "password": "Shelly password"
         }
       }
     },

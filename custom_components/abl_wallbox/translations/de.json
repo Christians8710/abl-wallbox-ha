@@ -3,29 +3,32 @@
   "config": {
     "step": {
       "user": {
-        "title": "ABL Wallbox verbinden",
-        "description": "Verbindet einen EVCC2/3-Controller per transparenter TCP-Brücke oder seriell. Bei TCP nur Host und Port ausfüllen; das serielle Gerät bleibt leer. RS485 benötigt 38400 Baud, 8E1. Andere Programme müssen dieselbe Verbindung freigeben. Beim Einrichten werden keine Ladeeinstellungen geschrieben.",
+        "title": "Verbindung wählen",
+        "description": "Wie ist die Wallbox verbunden? Die Einrichtung liest nur Werte und ändert keine Ladeeinstellungen.",
         "data": {
-          "name": "Name",
-          "connection_type": "Verbindungsart",
-          "host": "Host / IP-Adresse der Brücke",
-          "port": "TCP-Port",
-          "device": "Serielles Gerät / RFC2217-URL",
-          "baudrate": "Serielle Baudrate",
-          "address": "Controller-Busadresse"
+          "connection_type": "Verbindungsart"
         }
       },
       "reconfigure": {
         "title": "Verbindung ändern",
-        "description": "Ändert den Zugang zur vorhandenen Wallbox. Die Busadresse hier muss der tatsächlich im Controller gespeicherten Adresse entsprechen. Um die Adresse des Controllers selbst zu ändern, verwende die Busadresse-Entität oder die Aktion Controller konfigurieren.",
+        "description": "Wähle die Verbindungsart und passe danach die Zugangsdaten an. Die im Controller gespeicherte Busadresse wird dadurch nicht geändert.",
+        "data": {
+          "connection_type": "Verbindungsart"
+        }
+      },
+      "connection": {
+        "title": "ABL Wallbox verbinden",
+        "description": "Trage die Verbindungsdaten ein. RS485 verwendet 38400 Baud, 8E1. Für Shelly muss das mitgelieferte UART-Skript laufen; der HTTP-Port ist normalerweise 80.",
         "data": {
           "name": "Name",
-          "connection_type": "Verbindungsart",
           "host": "Host / IP-Adresse",
-          "port": "TCP-Port",
+          "port": "TCP- / HTTP-Port",
           "device": "Serielles Gerät / RFC2217-URL",
           "baudrate": "Baudrate",
-          "address": "Vorhandene Controller-Busadresse"
+          "address": "Controller-Busadresse",
+          "script_id": "Shelly-Skript-ID",
+          "username": "Shelly-Benutzer",
+          "password": "Shelly-Passwort"
         }
       }
     },
