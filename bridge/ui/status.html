@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="de"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ABL Netzwerkbrücke</title><link rel="stylesheet" href="/assets/abl-design.css">
+<link rel="icon" type="image/png" href="/assets/icon.png">
+</head><body class="abl-app">
+<a class="abl-skip" href="#inhalt">Zum Inhalt</a>
+<div class="abl-shell">
+  <header class="abl-header">
+    <img class="abl-logo" src="/assets/icon.png" width="76" height="76" alt="">
+    <div><div class="abl-eyebrow">USB · NETZWERK · HOME ASSISTANT</div>
+      <h1>ABL Netzwerkbrücke</h1><p class="abl-muted">Dein CONFCAB im lokalen Netzwerk.</p></div>
+  </header>
+  <nav class="abl-nav" aria-label="Bereiche"><a href="#inhalt" aria-current="page">Übersicht</a><a href="#anschluesse">Anschlüsse</a><a href="#wartung">Wartung</a></nav>
+  <main class="abl-grid" id="inhalt" tabindex="-1">
+    <div class="abl-stack">
+      <section class="abl-card" aria-labelledby="status-heading">
+        <h2 id="status-heading">Verbindungsstatus</h2>
+        <span class="abl-badge">USB-Erkennung</span>
+        <p class="abl-status" id="usb-status">{{STATUS}}</p>
+        <p class="abl-muted" id="usb-count">Erkannte Schnittstellen: {{COUNT}}</p>
+        <p id="bridge-feedback" class="abl-notice abl-error" role="status" aria-live="polite"></p>
+        <div class="abl-notice">Die USB-Erkennung bestätigt noch keine Antwort der Wallbox.</div>
+        <p>Laden und Wallbox-Einstellungen bedienst du in Home Assistant.</p>
+        <div class="abl-actions"><button class="abl-primary" type="button" id="status-button">Status aktualisieren</button></div>
+      </section>
+      <section class="abl-card" id="anschluesse" aria-labelledby="ports-heading">
+        <h2 id="ports-heading">Anschlüsse</h2>
+        <div class="abl-table-wrap" role="region" aria-label="USB-Anschlüsse" tabindex="0">
+          <table><thead><tr><th scope="col">USB-Adapter</th><th scope="col">TCP-Port</th><th scope="col">Seriell</th></tr></thead><tbody id="usb-rows">{{ROWS}}</tbody></table>
+        </div>
+      </section>
+    </div>
+    <aside class="abl-stack" aria-label="Verbindung und Wartung">
+      <section class="abl-card"><h2>Mit Home Assistant verbinden</h2>
+        <p>Verwende die Netzwerkadresse dieses Boards und den passenden TCP-Port aus der Anschlussliste.</p>
+        <details><summary>Hinweise zur Verbindung</summary><p class="abl-muted">Nur eine Anwendung kann den Anschluss gleichzeitig nutzen. Beende die ABL-PC-Software und virtuelle COM-Brücken, bevor Home Assistant zugreift.</p></details>
+      </section>
+      <section class="abl-card" id="wartung"><details><summary>Wartung · Board neu starten</summary>
+        <p>Startet das gesamte Tinker Board neu. Die Verbindung zu Home Assistant wird kurz unterbrochen.</p>
+        <button id="reboot-button" type="button">Tinker Board neu starten</button>
+        <p id="reboot-message" role="status" aria-live="polite" class="abl-notice"></p>
+        <noscript>Für den Neustart-Button bitte JavaScript aktivieren.</noscript>
+      </details></section>
+    </aside>
+  </main>
+  <footer class="abl-footer"><span>© 2026 Christians8710 · ABL Netzwerkbrücke</span><a href="/assets/LICENSE">MIT-Lizenz</a></footer>
+</div>
