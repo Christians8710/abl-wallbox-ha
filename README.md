@@ -1,6 +1,6 @@
 # ABL Wallbox für Home Assistant
 
-Lokale, kostenlose HACS-Integration für ABL eMH1 mit EVCC2/3-Controller. Steuert die Wallbox direkt über USB/RS485 oder eine transparente Netzwerkbrücke. Kein MQTT, keine Cloud und keine evcc-Lizenz erforderlich.
+Lokale, kostenlose HACS-Integration für ABL eMH1 mit EVCC2/3-Controller. Steuert die Wallbox direkt über USB/RS485 oder eine transparente Netzwerkbrücke. Kein MQTT und keine Cloud erforderlich.
 
 ## Funktionen
 
