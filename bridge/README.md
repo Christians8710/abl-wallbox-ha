@@ -1,10 +1,42 @@
-# ABL-Netzwerkbrücke · Update 1.1.0
+# ABL-Board · Update 1.2.0
 
 Dieses Paket aktualisiert eine bereits eingerichtete ABL-CONFCAB-Brücke auf einem Debian-/Armbian-Board. Es enthält **kein SD-Karten-Abbild** und installiert weder ein Betriebssystem noch fehlende Abhängigkeiten.
 
 ## Änderungen
 
-Petrol-Oberfläche mit dem unveränderten Projektlogo für Statusseite und WLAN-Einrichtung. Der Status aktualisiert sich ohne vollständiges Neuladen. Geöffnete Bereiche und Tastaturfokus bleiben erhalten. USB-Erkennung und eine tatsächliche Antwort der Wallbox werden weiterhin unterschieden. Die Brücke enthält keine Ladesteuerung; diese bleibt in Home Assistant.
+Optionaler eigenständiger Controller mit eigener Wallbox-Bedienseite und lokaler API. Der Board-Dienst besitzt allein die serielle Verbindung; HA ist ein API-Client. Ohne ausdrückliche Aktivierung bleibt der bisherige transparente Brückenbetrieb erhalten. Alle Ansichten verwenden das vorhandene Petrol-Design und Projektlogo.
+
+## Zum eigenständigen Controller wechseln
+
+1. HA auf Integration **1.2.0** aktualisieren. Den bestehenden ABL-Eintrag sichern und vorübergehend deaktivieren. ABL-PC-Software und COM-Umleitungen schließen. Den Eintrag nicht löschen.
+2. Das Board-ZIP entpacken. Mit `sudo /usr/bin/python3 install-update.py --check --standalone --address 1` vorprüfen. `--address` ist die vorhandene Busadresse und programmiert keine neue Adresse. Bei einem anderen USB-Adapterport zusätzlich `--controller-port PORT` angeben.
+3. Mit `sudo /usr/bin/python3 install-update.py --standalone --address 1` aktivieren. Der Installer sichert Programme und Brückenkonfiguration, startet den Dienst neu und prüft eine echte Antwort der Wallbox. Bei einem Fehler stellt er den bisherigen Betrieb wieder her.
+4. Den lokalen Zugriffsschlüssel am Board mit `sudo cat /var/lib/abl-bridge/controller/api-key` auslesen. Er wird nicht in URLs, Logmeldungen oder Diagnose-Downloads ausgegeben. `http://abl-bridge.local:8080/` öffnen und damit anmelden; alternativ die aktuelle IP des Boards verwenden.
+5. In HA beim **bestehenden** ABL-Eintrag **Neu konfigurieren** wählen: **Eigenständiger ABL-Controller / lokale API**, Host des Boards, Port **8080**, vorhandene Busadresse und Zugriffsschlüssel. Den Eintrag wieder aktivieren. Geräte- und Entitätskennungen bleiben erhalten.
+
+Danach liegt die Wallbox-Steuerung unter `/` und der Boardstatus unter `/bridge/`. Die WLAN-Einrichtung bleibt bei Comitup. Der rohe serielle TCP-Port ist nur unter `127.0.0.1` auf dem Board erreichbar; die Windows-COM-Umleitung ist dann kein paralleler Zugangsweg. Die API ist für das lokale Netz vorgesehen.
+
+Der Dienst liest beim Start und nach einem Ausfall die vorhandenen Werte aus. Er erteilt dabei keine neue Ladefreigabe und setzt keine Stromgrenzen. Einstellungen werden weiterhin im Controller geprüft und zurückgelesen. PV- und Zeitsteuerung kommen später.
+
+## Lokale API
+
+API-Abfragen benötigen `Authorization: Bearer <Zugriffsschlüssel>`. Browser verwenden eine zeitlich begrenzte HttpOnly-Sitzung und zusätzlich einen CSRF-Schlüssel für Änderungen. Zugriffsschlüssel gehören nicht in URLs.
+
+| Anfrage | Zweck |
+| --- | --- |
+| `GET /api/v1/state` | Cache mit `available`, `observed_at`, Controllerdaten und Fehlerverlauf |
+| `GET /api/v1/info` | API-Version und stabile Board-Kennung |
+| `POST /api/v1/command` | Ausdrücklicher Steuer- oder Diagnosebefehl |
+
+Ein Befehl enthält `request_id` (16–80 Zeichen aus Buchstaben, Ziffern, `_` und `-`), `address` und `operation`. Aktionen: `set_current` (ganzzahliges `value`: 0 oder 6 bis zur tatsächlichen Grenze), `set_enabled` (boolesches `value`), `configure` (`settings` mit den im Projekt dokumentierten Einstellfeldern), `refresh`, `scan`, `restart` und `clear_fault_counters`. Neustart und Zählerlöschung erfordern zusätzlich `confirm: true`.
+
+Die letzten **128 Anfragekennungen** bleiben auf dem Board gespeichert. Eine identische Wiederholung liefert das vorhandene Ergebnis und schreibt nicht erneut. Dieselbe Kennung mit anderen Daten wird abgewiesen. Eine durch einen Dienstabbruch unterbrochene Anfrage wird als unklar markiert und nicht automatisch wiederholt. Nach verlorener Antwort dieselbe Kennung verwenden und den tatsächlichen Zustand prüfen. Die Browserseite bietet **Ergebnis der Anfrage prüfen**. Alte Daten sind mit `available: false` gekennzeichnet und sperren die Bedienung.
+
+Board-Kennung, Busadresse, die letzten 100 Fehlerbeobachtungen und Anfragekennungen liegen unter `/var/lib/abl-bridge/controller/`. Zeitpunkte sind Beobachtungszeitpunkte; der Controller liefert keine Fehlerzeitstempel. Das Löschen der Controllerzähler entfernt den aufgezeichneten Verlauf nicht.
+
+## Netzwerkdiagnose
+
+Die rein lesende Diagnose kann mit `sudo systemctl enable --now abl-network-diagnostics.service` aktiviert werden. Sie protokolliert Netzwerk-/Kernelmeldungen und einmal pro Minute Laufzeit, WLAN-Verbindung, Gateway-Prüfung, Temperatur, Speicher und lokalen Brückenstatus. `/var/lib/abl-bridge/network-diagnostics.jsonl*` liegt außerhalb des Armbian-RAM-Logs, ist nur für root lesbar und auf drei Dateien zu je ungefähr 2 MB begrenzt. Die Dateien bleiben lokal und können Netzwerknamen und Adressen enthalten. Der Dienst verändert weder WLAN noch Wallbox und startet nichts automatisch neu.
 
 ## Voraussetzungen
 
