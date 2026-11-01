@@ -5,7 +5,7 @@ Optionale Dashboard-Karte für die bestehende Integration. Läuft vollständig l
 ## Lokal einrichten
 
 1. Das Dashboard-ZIP aus dem passenden GitHub-Release herunterladen. Den Ordner `abl-wallbox` nach `/config/www/` kopieren. Alternativ die Dateien `abl-wallbox-card.js`, `abl-design.css`, `icon.png` und `LICENSE` aus diesem Quellordner nach `/config/www/abl-wallbox/` kopieren. Das vorhandene Logo wird unverändert verwendet.
-2. Unter **Einstellungen → Dashboards → Ressourcen** die Adresse `/local/abl-wallbox/abl-wallbox-card.js?v=1.1.0` als **JavaScript-Modul** eintragen. Dafür gegebenenfalls den erweiterten Modus im Benutzerprofil aktivieren. Bei einem späteren Update die vorhandene Ressource aktualisieren und den Versionszusatz anpassen, statt eine zweite Ressource anzulegen.
+2. Unter **Einstellungen → Dashboards → Ressourcen** die Adresse `/local/abl-wallbox/abl-wallbox-card.js?v=1.2.0` als **JavaScript-Modul** eintragen. Dafür gegebenenfalls den erweiterten Modus im Benutzerprofil aktivieren. Bei einem späteren Update die vorhandene Ressource aktualisieren und den Versionszusatz anpassen, statt eine zweite Ressource anzulegen.
 3. Ein eigenes Dashboard erstellen. In dessen Rohkonfiguration den Inhalt von [`dashboard.yaml`](dashboard.yaml) übernehmen, oder eine einzelne manuelle Karte mit `type: custom:abl-wallbox-card` ergänzen. Vorhandene Dashboard-Konfiguration nicht überschreiben.
 4. Bei genau einer ABL-Integration wird die Wallbox automatisch gewählt. Bei mehreren Einträgen zeigt die Karte eine Auswahl. Optional kann `config_entry_id` die Karte fest an einen Eintrag binden.
 
