@@ -81,3 +81,15 @@ Die HA-Tests benötigen Linux und die in der CI festgelegte stabile Home-Assista
 - [micerny/abl-charger: unabhängiges Protokollbeispiel](https://github.com/micerny/abl-charger)
 
 Eigenständige Implementierung. Keine Herstellerprogrammdateien werden mitgeliefert. Nicht mit ABL verbunden. MIT-Lizenz.
+
+## ❤️ Projekt unterstützen
+
+Dieses Projekt wird kostenlos zur Verfügung gestellt und kontinuierlich weiterentwickelt.
+
+Wenn dir die Software gefällt und du die Weiterentwicklung unterstützen möchtest, kannst du dies freiwillig über GitHub Sponsors tun.
+
+❤️ [**Projekt über GitHub Sponsors unterstützen**](https://github.com/sponsors/Christians8710)
+
+Deine Unterstützung hilft bei der Weiterentwicklung, Fehlerbehebung, Wartung und Umsetzung neuer Funktionen.
+
+Vielen Dank für deine Unterstützung!
