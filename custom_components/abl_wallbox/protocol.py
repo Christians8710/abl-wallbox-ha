@@ -555,6 +555,17 @@ class Controller:
                     restore = 0xE0E0 if old_state == 0xE0 else (0xE2E2 if old_state == 0xE2 else 0xA1A1)
                     await self.bus.write(self.address, 5, restore)
                     await self._wait_state(old_state)
+            if "installation_limit" in settings:
+                # The controller caps its effective PWM, but retains a higher target.
+                # Only an explicit limit setting may change that stored target.
+                limits = await self._limits()
+                maximum = min(limits.rated, limits.installation)
+                if limits.requested > maximum:
+                    await self.bus.write(self.address, 20, amps_to_pwm(maximum))
+                    await self._wait_limits(
+                        lambda limits: limits.requested == maximum,
+                        "Charging current reduction to the installation limit was not confirmed",
+                    )
             # Verify mode/fallback settings after leaving setup mode.
             self.version = Version.parse(await self.bus.read(self.address, 1, 2))
             flags = int.from_bytes((await self.bus.read(self.address, 6, 2))[2:], "big")
