@@ -77,6 +77,7 @@ class SimulatedBus:
         self.imbalance = 20
         self.writes = []
         self.reject_limit = False
+        self.reject_target = False
         self.occupied = False
         self.lost_address_ack = False
 
@@ -92,11 +93,13 @@ class SimulatedBus:
         if register == 6:
             return bytes([6, 2]) + self.flags.to_bytes(2, "big")
         if register == 15:
+            effective = self.requested if self.requested == 1000 else min(533, self.installation, self.requested)
             return bytes([15, (0x80 | self.imbalance) if self.imbalance < 63 else 63]) + struct.pack(
-                ">4H", 533, self.installation, self.requested, self.requested
+                ">4H", 533, self.installation, self.requested, effective
             )
         if register == 46:
-            return bytes([46, self.state]) + struct.pack(">4H", 0x1000 | self.requested, 1000, 1000, 1000)
+            effective = self.requested if self.requested == 1000 else min(533, self.installation, self.requested)
+            return bytes([46, self.state]) + struct.pack(">4H", 0x1000 | effective, 1000, 1000, 1000)
         if 26 <= register <= 42:
             return bytes([register, 7 if register == 28 else 0])
         raise AssertionError(register)
@@ -112,7 +115,8 @@ class SimulatedBus:
             elif value == 0x4040:
                 self.flags &= ~0x8000
         elif register == 20:
-            self.requested = value
+            if not self.reject_target:
+                self.requested = value
         elif register == 45:
             if value & 0x8000:
                 self.imbalance = p.integer_amps(value & 0x7FFF)
@@ -173,6 +177,48 @@ async def test_configuration_preserves_disabled_outlet():
     assert bus.installation == p.amps_to_pwm(20)
     assert bus.writes[0] == (5, 0xE2E2)
     assert bus.writes[-1] == (5, 0xE0E0)
+
+
+@pytest.mark.parametrize(
+    "old_limit,target,new_limit,expected",
+    [(32, 32, 16, 16), (32, 10, 16, 10), (32, 0, 16, 0), (16, 16, 32, 16), (16, 32, 16, 16)],
+)
+@pytest.mark.parametrize("state", [0xA1, 0xE0])
+async def test_installation_limit_only_reduces_excessive_target(old_limit, target, new_limit, expected, state):
+    bus = SimulatedBus()
+    bus.state = state
+    bus.installation = p.amps_to_pwm(old_limit)
+    bus.requested = 1000 if target == 0 else p.amps_to_pwm(target)
+    await p.Controller(bus).configure(installation_limit=new_limit)
+    assert bus.installation == p.amps_to_pwm(new_limit)
+    assert bus.requested == (1000 if expected == 0 else p.amps_to_pwm(expected))
+    assert bus.state == state
+    assert [value for register, value in bus.writes if register == 20] == (
+        [p.amps_to_pwm(expected)] if target > new_limit else []
+    )
+    assert not any(register == 43 for register, _ in bus.writes)
+
+
+async def test_polling_reports_excessive_target_without_writing():
+    bus = SimulatedBus()
+    bus.requested = p.amps_to_pwm(32)
+    data = await p.Controller(bus).refresh()
+    assert data["requested_current"] == 32
+    assert data["installation_limit"] == 16
+    assert data["effective_current"] == pytest.approx(16.02)
+    assert bus.writes == []
+
+
+async def test_failed_target_reduction_is_reported_and_preserves_disabled_state():
+    bus = SimulatedBus()
+    bus.state = 0xE0
+    bus.installation = bus.requested = p.amps_to_pwm(32)
+    bus.reject_target = True
+    with pytest.raises(p.ABLError, match="current reduction.*not confirmed"):
+        await p.Controller(bus).configure(installation_limit=16)
+    assert bus.state == 0xE0
+    assert bus.installation == p.amps_to_pwm(16)
+    assert bus.requested == p.amps_to_pwm(32)
 
 
 async def test_acknowledged_state_transitions_can_be_delayed():

@@ -84,6 +84,23 @@ async def test_persistent_limit_updates_dynamic_target_maximum(hass):
     assert bus.state == 0xA1
 
 
+async def test_lowering_limit_reduces_target_value_and_its_maximum(hass):
+    entry, bus = await setup_entry(hass)
+    bus.installation = bus.requested = p.amps_to_pwm(32)
+    await entry.runtime_data.async_request_refresh()
+    assert hass.states.get(entity_id(hass, entry, "number", "requested_current")).state == "32"
+    await hass.services.async_call(
+        "number", "set_value",
+        {"entity_id": entity_id(hass, entry, "number", "installation_limit"), "value": 16},
+        blocking=True,
+    )
+    await hass.async_block_till_done()
+    target = hass.states.get(entity_id(hass, entry, "number", "requested_current"))
+    assert target.state == "16"
+    assert target.attributes["max"] == 16
+    assert bus.state == 0xA1
+
+
 async def test_service_changes_bus_address_without_replacing_device(hass):
     entry, bus = await setup_entry(hass)
     original = entity_id(hass, entry, "number", "address")
