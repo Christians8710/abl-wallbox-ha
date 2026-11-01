@@ -37,6 +37,12 @@ Die Einstellungen des Charge-Controller-Bereichs der ABL Configuration Software 
 
 Die bisherige Integration `ev_charger_modbus` muss für denselben Anschluss deaktiviert sein. Bereits vorhandene Automationen verwenden deren alte Entitäten weiter; sie müssen bei Bedarf auf die neuen ABL-Wallbox-Entitäten umgestellt werden.
 
+## Wallbox-Bedienseite
+
+Die optionale [Wallbox-Bedienseite](frontend/README.md) bündelt Laden, Einstellungen und Diagnose in einer responsiven Petrol-Oberfläche. Sie wird lokal als Dashboard-Karte eingebunden; die normalen HA-Geräteansichten bleiben verfügbar.
+
+Das [Update für die Tinker-Board-Brücke](bridge/README.md) bringt denselben Stil auf die Statusseite und die WLAN-Einrichtung. Die Dashboard-Dateien und das Brücken-Update stehen als getrennte ZIP-Pakete bei den [Releases](https://github.com/Christians8710/abl-wallbox-ha/releases) bereit. Ein HACS-Update allein installiert weder die Dashboard-Ressource noch die Software auf dem Board.
+
 ## Die unterschiedlichen Stromwerte
 
 - **Nennstrom:** bauliche Obergrenze des Controllers, beispielsweise 32 A.
