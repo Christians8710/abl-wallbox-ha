@@ -148,10 +148,27 @@ async def test_config_flow_uses_read_only_probe(hass):
     assert bus.closed
 
 
-async def test_reconfigure_tcp_to_api_preserves_all_entity_and_device_ids(hass, tmp_path):
-    from controller.runtime import ControllerRuntime
+@pytest.fixture
+def board_backend(tmp_path):
+    import time
+    from controller.runtime import ControllerRuntime, RuntimeThread
     from controller.shared import p as board_protocol
     from test_controller import RuntimeBus
+    bus = RuntimeBus()
+    runtime = ControllerRuntime(board_protocol.Controller(bus), tmp_path)
+    worker = RuntimeThread(runtime)
+    worker.start()
+    try:
+        deadline = time.monotonic() + 3
+        while not runtime.snapshot()['available'] and time.monotonic() < deadline:
+            time.sleep(.01)
+        assert runtime.snapshot()['available']
+        yield runtime, bus, worker
+    finally:
+        worker.stop()
+
+
+async def test_reconfigure_tcp_to_api_preserves_all_entity_and_device_ids(hass, board_backend):
     from custom_components.abl_wallbox.api_client import APIConnection
     from homeassistant.helpers import device_registry as dr
 
@@ -164,12 +181,10 @@ async def test_reconfigure_tcp_to_api_preserves_all_entity_and_device_ids(hass, 
     entry.runtime_data.history.append(history)
     await entry.runtime_data._store.async_save(entry.runtime_data._storage_data())
 
-    bus = RuntimeBus()
-    runtime = ControllerRuntime(board_protocol.Controller(bus), tmp_path)
-    await runtime.refresh()
+    runtime, bus, worker = board_backend
     async def request(_connection, method, path, payload=None):
         assert path in ('/api/v1/state', '/api/v1/command')
-        return await runtime.execute(payload) if method == 'POST' else runtime.snapshot()
+        return await hass.async_add_executor_job(worker.submit, payload) if method == 'POST' else runtime.snapshot()
 
     with patch.object(APIConnection, 'request', request):
         result = await hass.config_entries.flow.async_init(DOMAIN, context={'source': 'reconfigure', 'entry_id': entry.entry_id})
@@ -190,7 +205,7 @@ async def test_reconfigure_tcp_to_api_preserves_all_entity_and_device_ids(hass, 
         await hass.services.async_call('number', 'set_value', {'entity_id': target_id, 'value': 10}, blocking=True)
         assert hass.states.get(target_id).state == '10'
         # A local change of the physical address follows the same pinned board, without replacing HA entities.
-        await runtime.execute({'operation': 'configure', 'settings': {'address': 2}, 'address': 1, 'request_id': 'local-address-test-0001'})
+        await hass.async_add_executor_job(worker.submit, {'operation': 'configure', 'settings': {'address': 2}, 'address': 1, 'request_id': 'local-address-test-0001'})
         await entry.runtime_data.async_request_refresh()
         assert entry.data['address'] == 2
         assert entity_id(hass, entry, 'number', 'requested_current') == target_id

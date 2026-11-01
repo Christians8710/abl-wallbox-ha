@@ -143,6 +143,43 @@ async def test_fault_observations_persist_independently_of_ha(tmp_path):
     assert restored.snapshot()['history'][0]['code'] == 'F3'
 
 
+async def test_full_commands_and_polls_do_not_interleave(tmp_path):
+    runtime, _ = make_runtime(tmp_path)
+    active = maximum = 0
+    async def observed(method, *args, **kwargs):
+        nonlocal active, maximum
+        active += 1
+        maximum = max(active, maximum)
+        try:
+            await asyncio.sleep(.002)
+            return await method(*args, **kwargs)
+        finally:
+            active -= 1
+    original_refresh = runtime.controller.refresh
+    original_set = runtime.controller.set_requested_current
+    runtime.controller.refresh = lambda **kwargs: observed(original_refresh, **kwargs)
+    runtime.controller.set_requested_current = lambda value: observed(original_set, value)
+    await asyncio.gather(runtime.execute(command(value=10)), runtime.refresh(), runtime.execute(command(identifier='b' * 32, value=12)))
+    assert maximum == 1
+    assert runtime.snapshot()['data']['requested_current'] == 12
+
+
+async def test_adapter_rejects_invalid_data_and_other_board_before_changing_address(tmp_path):
+    runtime, _ = make_runtime(tmp_path)
+    await runtime.refresh()
+    snapshot = runtime.snapshot()
+    client = adapter.APIController(None, controller_id='other-board')
+    snapshot['address'] = 2
+    with pytest.raises(p.ABLError, match='anderes Board'):
+        client._state(snapshot, allow_address_change=True)
+    assert client.address == 1
+    for field, value in [('enabled', 'yes'), ('state', []), ('effective_current', float('nan')), ('error_counters', {'F1': 0})]:
+        snapshot = runtime.snapshot()
+        snapshot['data'][field] = value
+        with pytest.raises(p.ABLError):
+            adapter.APIController(None)._state(snapshot)
+
+
 @pytest.mark.parametrize('payload', [
     command(value=True), command(value=1.5), command(value=5), command(value=81),
     command('set_enabled', value=1), command('configure', settings={'mode': []}),
