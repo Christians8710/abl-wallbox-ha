@@ -1,4 +1,4 @@
-"""Home Assistant integration for ABL eMH1 EVCC2/3 controllers."""
+"""WallboxPilot integration for compatible ABL eMH1 EVCC2/3 hardware."""
 
 from __future__ import annotations
 
@@ -111,7 +111,7 @@ def _register_services(hass: HomeAssistant) -> None:
     def coordinator_for(call: ServiceCall) -> ABLCoordinator:
         entry = hass.config_entries.async_get_entry(call.data["config_entry_id"])
         if entry is None or entry.domain != DOMAIN or not getattr(entry, "runtime_data", None):
-            raise HomeAssistantError("Choose a loaded ABL Wallbox integration entry")
+            raise HomeAssistantError("Choose a loaded WallboxPilot integration entry")
         return entry.runtime_data
 
     async def configure(call: ServiceCall) -> None:

@@ -13,7 +13,7 @@ from .const import DEFAULT_INTERVAL, DEFAULT_PORT, DOMAIN
 from .protocol import ABLError, ControllerBusy
 
 CONNECTIONS = {
-    "api": "Eigenständiger ABL-Controller / lokale API",
+    "api": "WallboxPilot / lokale API",
     "tcp": "TCP / Netzwerkbrücke",
     "serial": "USB / seriell / RFC2217",
     "shelly": "Shelly Pro RS485 (UART-Skript)",
@@ -28,7 +28,7 @@ def endpoint_id(data):
 
 def schema(connection, data=None):
     data = data or {}
-    fields = {vol.Required("name", default=data.get("name", "ABL Wallbox")): str}
+    fields = {vol.Required("name", default=data.get("name", "WallboxPilot")): str}
     if connection in ("tcp", "shelly", "api"):
         fields.update(
             {
@@ -66,7 +66,7 @@ def schema(connection, data=None):
 
 class ABLConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
-    _connection_type = "tcp"
+    _connection_type = "api"
     _reconfiguring = False
 
     @staticmethod
@@ -80,7 +80,7 @@ class ABLConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return await self.async_step_connection()
         return self.async_show_form(
             step_id="user",
-            data_schema=vol.Schema({vol.Required("connection_type", default="tcp"): vol.In(CONNECTIONS)}),
+            data_schema=vol.Schema({vol.Required("connection_type", default="api"): vol.In(CONNECTIONS)}),
         )
 
     async def _probe(self, data):

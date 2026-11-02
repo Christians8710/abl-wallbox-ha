@@ -135,7 +135,7 @@ class ABLCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     self.entry.data.get("device"),
                     new_address,
                 ):
-                    raise HomeAssistantError("Another ABL entry already uses this bus address")
+                    raise HomeAssistantError("Another WallboxPilot entry already uses this bus address")
         try:
             await self.controller.configure(**settings)
         except (ABLError, ValueError, OSError) as err:

@@ -1,14 +1,14 @@
 {
   "domain": "abl_wallbox",
-  "name": "ABL Wallbox",
+  "name": "WallboxPilot",
   "codeowners": [
     "@Christians8710"
   ],
   "config_flow": true,
-  "documentation": "https://github.com/Christians8710/abl-wallbox-ha",
+  "documentation": "https://github.com/Christians8710/wallboxpilot",
   "integration_type": "device",
   "iot_class": "local_polling",
-  "issue_tracker": "https://github.com/Christians8710/abl-wallbox-ha/issues",
+  "issue_tracker": "https://github.com/Christians8710/wallboxpilot/issues",
   "requirements": [
     "pyserial==3.5"
   ],
