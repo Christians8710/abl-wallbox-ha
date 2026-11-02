@@ -6,7 +6,12 @@ const source = fs.readFileSync(require('node:path').join(__dirname, '../frontend
   .replaceAll('import.meta.url', '"http://localhost/frontend/abl-wallbox-card.js"');
 const classes = new Map();
 vm.runInNewContext(source, {
-  HTMLElement: class { attachShadow() {} }, document: {},
+  HTMLElement: class {
+    attachShadow() {} attributes = new Map();
+    setAttribute(key, value) { this.attributes.set(key, value); }
+    removeAttribute(key) { this.attributes.delete(key); }
+    getAttribute(key) { return this.attributes.get(key) ?? null; }
+  }, document: {},
   customElements: {get: key => classes.get(key), define: (key, value) => classes.set(key, value)},
   window: {confirm: () => true}, URL, Intl, console,
 });
@@ -25,6 +30,30 @@ function fixture() {
   card._fields = {'number.requested_current': field('16'), 'number.installation_limit': field('16'), 'select.mode': field('Standalone')};
   return {card, calls};
 }
+
+test('HA appearance changes preserve unsaved fields and do not call a service', () => {
+  const {card, calls} = fixture();
+  const fields = card._fields;
+  card._fields['number.requested_current'].value = '12'; card._dirty.add('number.requested_current');
+  for (const darkMode of [true, false, true]) {
+    card.hass = {...card._hass, themes: {darkMode}};
+    assert.equal(card.getAttribute('data-abl-theme'), darkMode ? 'dark' : 'light');
+    assert.equal(card._fields, fields); assert.equal(fields['number.requested_current'].value, '12');
+    assert.ok(card._dirty.has('number.requested_current')); assert.equal(calls.length, 0);
+  }
+  card.hass = {...card._hass, themes: {}};
+  assert.equal(card.getAttribute('data-abl-theme'), null);
+});
+
+test('saving returns the confirmed setting, service failure retains the draft', async () => {
+  const {card} = fixture(); card._fields['number.requested_current'].value = '12';
+  assert.equal(await card._saveNumber('requested_current'), 'Ladestromvorgabe auf 12 A gesetzt.');
+  card._fields['number.requested_current'].value = '10'; card._dirty.add('number.requested_current');
+  card._hass.callService = async () => { throw new Error('Keine Verbindung'); };
+  await assert.rejects(card._saveNumber('requested_current'), /Keine Verbindung/);
+  assert.ok(card._dirty.has('number.requested_current'));
+  assert.equal(card._fields['number.requested_current'].value, '10');
+});
 test('renamed entities map by unique identity and domain, disabled entities stay excluded', () => {
   const {card} = fixture(); card._registry = [
     {config_entry_id: 'entry', entity_id: 'number.my_target', unique_id: 'entry_requested_current'},

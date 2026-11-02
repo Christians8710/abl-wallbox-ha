@@ -1,4 +1,8 @@
-# WallboxPilot · Board-Update 1.2.0
+# WallboxPilot · Board-Update 1.2.1
+
+Version 1.2.1 verbessert beide Oberflächen mit hellem und dunklem Design, deutlicheren Feldumrandungen und konkreten Aktionsrückmeldungen. Das Board folgt der Systemeinstellung; die Dashboard-Karte folgt dem HA-Design. Petrol und das originale Logo bleiben erhalten.
+
+Bei bereits aktivem eigenständigem Controller genügt das normale Update ohne `--standalone`. Der bestehende HA-Eintrag bleibt bestehen; die nachfolgenden Umstellungsschritte sind nur beim ersten Wechsel von der seriellen Brücke erforderlich.
 
 Dieses Paket aktualisiert eine bereits eingerichtete ABL-CONFCAB-Brücke auf einem Debian-/Armbian-Board. Es enthält **kein SD-Karten-Abbild** und installiert weder ein Betriebssystem noch fehlende Abhängigkeiten.
 

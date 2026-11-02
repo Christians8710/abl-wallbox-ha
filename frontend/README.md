@@ -5,7 +5,7 @@ Optionale Dashboard-Karte für die bestehende Integration. Läuft vollständig l
 ## Lokal einrichten
 
 1. Das Dashboard-ZIP aus dem passenden GitHub-Release herunterladen. Den Ordner `wallboxpilot` nach `/config/www/` kopieren. Bei manueller Einrichtung die Dateien `wallboxpilot-card.js`, `abl-wallbox-card.js`, `abl-design.css`, `icon.png` und `LICENSE` nach `/config/www/wallboxpilot/` kopieren. Das vorhandene Logo wird unverändert verwendet.
-2. Unter **Einstellungen → Dashboards → Ressourcen** die Adresse `/local/wallboxpilot/wallboxpilot-card.js?v=1.2.0` als **JavaScript-Modul** eintragen. Dafür gegebenenfalls den erweiterten Modus im Benutzerprofil aktivieren. Bei späteren Updates die vorhandene Ressource aktualisieren und den Versionszusatz anpassen, statt eine zweite Ressource anzulegen.
+2. Unter **Einstellungen → Dashboards → Ressourcen** die Adresse `/local/wallboxpilot/wallboxpilot-card.js?v=1.2.1` als **JavaScript-Modul** eintragen. Dafür gegebenenfalls den erweiterten Modus im Benutzerprofil aktivieren. Bei späteren Updates die vorhandene Ressource aktualisieren und den Versionszusatz anpassen, statt eine zweite Ressource anzulegen.
 3. Ein eigenes Dashboard erstellen. In dessen Rohkonfiguration den Inhalt von [`dashboard.yaml`](dashboard.yaml) übernehmen, oder eine einzelne manuelle Karte mit `type: custom:wallboxpilot-card` ergänzen. Vorhandene Dashboard-Konfiguration nicht überschreiben.
 4. Bei genau einer WallboxPilot-Integration wird die Wallbox automatisch gewählt. Bei mehreren Einträgen zeigt die Karte eine Auswahl. Optional kann `config_entry_id` die Karte fest an einen Eintrag binden.
 
@@ -22,6 +22,8 @@ Bestehende Dashboards mit `custom:abl-wallbox-card` funktionieren weiterhin. Fü
 Die Karte verwendet ausschließlich bestehende HA-Entitäten und Aktionen. Berechtigungen, controllerseitige Prüfungen und Konfigurationsbedingungen bleiben in der Integration wirksam. Fehlende Werte werden nicht als Null oder als Erfolg dargestellt. Eingaben und aufgeklappte Bereiche bleiben bei Statusaktualisierungen erhalten. Feste Einstellungen erfordern weiterhin ein getrenntes Fahrzeug. Die feste Stromgrenze wird vor dem Speichern zusätzlich bestätigt.
 
 ## Gestaltung und Pflege
+
+Die Karte übernimmt automatisch das wirksame helle oder dunkle HA-Design. Die Board-Seite folgt der Systemeinstellung des Browsers. Beide Varianten behalten Petrol, Gold und das originale Logo bei. Feldumrandungen sind deutlicher erkennbar; Schaltflächen zeigen beim Drücken einen eigenen Zustand. Rückmeldungen nennen die bestätigte Einstellung oder Aktion. Ungespeicherte Eingaben bleiben auch bei einem Designwechsel erhalten.
 
 Farben, Schrift, Abstände und Grundelemente stehen zentral in [`abl-design.css`](abl-design.css). Die Gestaltung ist auf die Karte begrenzt und überschreibt nicht das allgemeine Home-Assistant-Design. Die Spalten wechseln unter 700 Pixeln auf eine Spalte. Das originale PNG wird lokal geladen; es enthält keine neue Grafik oder veränderte Farben.
 

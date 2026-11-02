@@ -19,7 +19,7 @@ from urllib.request import urlopen
 
 SOURCE = Path(__file__).resolve().parent
 BACKUPS = Path('/var/backups/abl-bridge')
-VERSION = '1.2.0'
+VERSION = '1.2.1'
 CONFIG = Path('/etc/abl-bridge.json')
 TARGETS = {
     'abl-bridge.py': '/usr/local/sbin/abl-bridge',

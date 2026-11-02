@@ -114,6 +114,30 @@ async function poll() {
   if (!$('application').hidden) timer = setTimeout(poll, 5000);
 }
 function requestId() { return [...crypto.getRandomValues(new Uint8Array(16))].map(value => value.toString(16).padStart(2, '0')).join(''); }
+function commandMessage(request, result) {
+  const data = result?.data || {};
+  const confirmed = (message, matches = true) => result?.available && matches ? message : 'Änderung bestätigt. Aktuelle Werte werden erneut abgefragt.';
+  if (request.operation === 'set_current') return confirmed(`Ladestromvorgabe auf ${request.value} A gesetzt.`, data.requested_current === request.value);
+  if (request.operation === 'set_enabled') return confirmed(request.value ? 'Ladefreigabe erteilt.' : 'Ladefreigabe gesperrt.', data.enabled === request.value);
+  if (request.operation === 'configure') {
+    const settings = request.settings || {};
+    if ('installation_limit' in settings) return confirmed(`Feste Stromgrenze auf ${settings.installation_limit} A gesetzt.`);
+    if ('address' in settings) return confirmed(`Busadresse ${settings.address} gespeichert.`);
+    if ('mode' in settings) return confirmed(`Betriebsart „${{standalone: 'Standalone', rfid: 'RFID / lokale Freigabe', sbc: 'Externe Steuerung / SBC'}[settings.mode] || settings.mode}“ gespeichert.`);
+    if ('imbalance' in settings) return confirmed(`Schieflasterkennung: ${settings.imbalance === 'off' ? 'Aus' : settings.imbalance + ' A'} gespeichert.`);
+    for (const [key, label] of [['fallback_enabled', 'Fallback bei Steuerungsausfall'], ['start_on_boot', 'Ladefreigabe nach Neustart']]) {
+      if (key in settings) return confirmed(`${label} ${settings[key] ? 'aktiviert' : 'deaktiviert'}.`);
+    }
+  }
+  if (request.operation === 'restart') return 'Neustart der Wallbox angefordert.';
+  if (request.operation === 'clear_fault_counters') return confirmed('Fehlerzähler zurückgesetzt.');
+  if (request.operation === 'refresh') return result?.available ? 'Wallbox-Daten aktualisiert.' : 'Abfrage abgeschlossen. Die Wallbox ist noch nicht erreichbar.';
+  if (request.operation === 'scan') {
+    const count = result?.result?.controllers?.length || 0;
+    return count ? `Bus-Suche abgeschlossen: ${count} Controller gefunden.` : 'Bus-Suche abgeschlossen: Keine Controller gefunden.';
+  }
+  return data.state ? 'Änderung bestätigt.' : 'Anfrage bestätigt.';
+}
 async function command(payload, {retry = false, field = null} = {}) {
   if (busy || (!retry && (!current?.available || pending))) return;
   const request = retry ? pending.payload : {request_id: requestId(), address: current.address, ...payload};
@@ -125,7 +149,7 @@ async function command(payload, {retry = false, field = null} = {}) {
     if (pending.field) dirty.delete(pending.field);
     pending = null; sessionStorage.removeItem('abl_pending_command'); render(result);
     if (result.result?.controllers) $('scan-result').textContent = result.result.controllers.length ? JSON.stringify(result.result.controllers, null, 2) : 'Keine Controller gefunden.';
-    notice(request.operation === 'restart' ? 'Neustart der Wallbox angefordert.' : 'Aktion erfolgreich ausgeführt.');
+    notice(commandMessage(request, result));
     $('technical-error').textContent = '';
   } catch (error) {
     if (error.state) render(error.state);
