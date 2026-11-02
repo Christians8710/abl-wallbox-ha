@@ -1,5 +1,5 @@
 {
-  "title": "ABL Wallbox",
+  "title": "WallboxPilot",
   "config": {
     "step": {
       "user": {
@@ -17,8 +17,8 @@
         }
       },
       "connection": {
-        "title": "Connect ABL Wallbox",
-        "description": "Enter the connection details. RS485 uses 38400 baud, 8E1. Shelly requires the supplied UART bridge script; its HTTP port is usually 80.",
+        "title": "Connect WallboxPilot",
+        "description": "Local board API: HTTP port 8080 and board API key. Direct RS485: 38400 baud, 8E1. Shelly: install the supplied UART script, usually HTTP port 80.",
         "data": {
           "name": "Name",
           "host": "Host / IP address",
@@ -28,14 +28,16 @@
           "address": "Controller bus address",
           "script_id": "Shelly script ID",
           "username": "Shelly user",
-          "password": "Shelly password"
+          "password": "Shelly password",
+          "api_key": "Board API key"
         }
       }
     },
     "error": {
       "cannot_connect": "No valid controller reply. Check the address, connection and physical serial settings.",
       "bridge_busy": "Another program occupies the bridge. Disconnect the ABL PC software, COM redirector and other integrations.",
-      "invalid_connection": "Enter a hostname without http:// or a serial device path."
+      "invalid_connection": "Enter a hostname without http:// or a serial device path.",
+      "invalid_auth": "The board API key is incorrect. Check the key and try again."
     },
     "abort": {
       "already_configured": "This controller is already configured.",

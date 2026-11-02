@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 """USB serial discovery and supervision for Debian stable ser2net.
 
-No charging commands or Modbus interpretation: all bytes belong to the HA
-client. Each adapter keeps its TCP port across restarts and USB hotplug.
+Legacy mode forwards bytes to a HA client. Optional standalone mode owns the
+bus locally and exposes the authenticated controller API. Stable USB port mapping.
 """
 import html
 import json
@@ -11,6 +11,7 @@ import secrets
 import signal
 import socket
 import subprocess
+import sys
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -23,6 +24,9 @@ RUN = Path("/run/abl-bridge")
 UI = Path(__file__).resolve().parent / "ui"
 if not UI.is_dir():
     UI = Path("/usr/local/share/abl-bridge/ui")
+CONTROLLER = UI.parent / "controller"
+if not CONTROLLER.is_dir():
+    CONTROLLER = Path(__file__).resolve().parents[1] / "controller"
 try:
     boot_id = Path('/proc/sys/kernel/random/boot_id').read_text().strip()
 except OSError:
@@ -90,8 +94,15 @@ class StatusPage(BaseHTTPRequestHandler):
         self.reply(code,json.dumps(value,ensure_ascii=False).encode('utf-8'))
 
     def do_POST(self):
+        api = getattr(self.server, 'controller_api', None)
+        if self.path.startswith('/api/v1/') and api:
+            api.post(self)
+            return
         if self.path != '/reboot':
             self.send_error(404)
+            return
+        if api and not api.auth.context(self):
+            self.json_reply(401, {'error': 'Bitte zuerst an der Wallbox-Oberfläche anmelden.'})
             return
         # Protect the LAN control action against cross-site requests and DNS rebinding.
         try:
@@ -139,6 +150,16 @@ class StatusPage(BaseHTTPRequestHandler):
         self.json_reply(202,{'ok':True,'message':'Tinker Board startet neu.','boot_id':boot_id})
 
     def do_GET(self):
+        api = getattr(self.server, 'controller_api', None)
+        if self.path.startswith('/api/v1/') and api:
+            api.get(self)
+            return
+        if api and self.path == '/':
+            self.reply(200, (CONTROLLER / 'web/index.html').read_bytes(), 'text/html')
+            return
+        if api and self.path == '/controller-assets/app.js':
+            self.reply(200, (CONTROLLER / 'web/app.js').read_bytes(), 'text/javascript')
+            return
         assets = {"/assets/abl-design.css": ("abl-design.css", "text/css"),
                   "/assets/icon.png": ("icon.png", "image/png"),
                   "/assets/LICENSE": ("LICENSE", "text/plain")}
@@ -149,12 +170,15 @@ class StatusPage(BaseHTTPRequestHandler):
         if self.path in ("/status.json", "/health"):
             body = json.dumps(status, ensure_ascii=False).encode("utf-8")
             kind = "application/json"
-        elif self.path == "/":
+        elif self.path in ("/", "/bridge/"):
             rows = "".join("<tr><td>"+html.escape(row["adapter"])+"</td><td>"+str(row["tcp_port"])+"</td><td>"+html.escape(row["serial"])+"</td></tr>" for row in status["adapters"])
             message = "CONFCAB erkannt" if rows else "Wartet auf USB-Adapter"
             body = ((UI / "status.html").read_text(encoding="utf-8")
                     .replace("{{STATUS}}", message)
                     .replace("{{ROWS}}", rows or '<tr><td colspan="3">Noch kein USB-Adapter angeschlossen.</td></tr>')
+                    .replace("{{CONTROL_HINT}}", '<a href="/">Wallbox-Steuerung öffnen</a> – Laden und Einstellungen funktionieren auch ohne Home Assistant.' if api else 'Laden und Wallbox-Einstellungen bedienst du in Home Assistant.')
+                    .replace("{{HA_CONNECTION_HINT}}", 'Wähle WallboxPilot / lokale API, die Netzwerkadresse dieses Boards und den HTTP-Port ' + str(self.server.server_address[1]) + '.' if api else 'Verwende die Netzwerkadresse dieses Boards und den passenden TCP-Port aus der Anschlussliste.')
+                    .replace("{{CONNECTION_DETAILS}}", 'Der Board-Dienst besitzt die serielle Verbindung. Home Assistant greift mit dem lokalen Zugriffsschlüssel über die API zu.' if api else 'Nur eine Anwendung kann den Anschluss gleichzeitig nutzen. Beende die ABL-PC-Software und virtuelle COM-Umleitungen, bevor Home Assistant zugreift.')
                     .replace("{{COUNT}}", str(len(status["adapters"]))) + '''<script>
 const csrfToken='''+json.dumps(reboot_token)+''';
 const currentBoot='''+json.dumps(boot_id)+''';
@@ -240,7 +264,26 @@ def main():
     assignments = json.loads(assignments_file.read_text()) if assignments_file.exists() else {}
     if not isinstance(assignments,dict) or any(not isinstance(key,str) or type(port) is not int or not 1024 <= port <= 65535 for key,port in assignments.items()) or len(set(assignments.values())) != len(assignments):
         raise ValueError("Invalid persistent USB port assignments")
+    worker = None
+    api = None
+    controller_config = config.get('controller', {})
+    if controller_config.get('enabled'):
+        sys.path.insert(0, str(CONTROLLER.parent))
+        from controller.runtime import ControllerRuntime, RuntimeThread
+        from controller.http_api import ControllerAPI
+        from controller.shared import p
+        controller_bus = p.Bus('tcp', host='127.0.0.1', port=int(controller_config.get('tcp_port', config['base_port'])))
+        runtime = ControllerRuntime(p.Controller(controller_bus, int(controller_config.get('address', 1))), STATE / 'controller')
+        worker = RuntimeThread(runtime)
+        api = ControllerAPI(worker, STATE / 'controller/api-key')
+        worker.start()
+    listen_host = config.get('listen_host', '0.0.0.0')
+    if listen_host not in ('0.0.0.0', '127.0.0.1'):
+        raise ValueError('Unsupported bridge listening address')
+    if worker and listen_host != '127.0.0.1':
+        raise ValueError('The standalone controller requires a loopback-only serial bridge')
     server = ThreadingHTTPServer(("0.0.0.0",int(config["status_port"])),StatusPage)
+    server.controller_api = api
     threading.Thread(target=server.serve_forever,daemon=True).start()
     for sig in (signal.SIGINT,signal.SIGTERM):
         signal.signal(sig,lambda *_: stop.set())
@@ -271,7 +314,7 @@ def main():
                     connections = {}
                     for row in rows:
                         connections[f"confcab_{row['tcp_port']}"] = {
-                            "accepter":f"tcp,0.0.0.0,{row['tcp_port']}",
+                            "accepter":f"tcp,{listen_host},{row['tcp_port']}",
                             "connector":f"serialdev,{row['device']},{framing},local",
                             "timeout":120,
                             "options":{"max-connections":1,"kickolduser":False}}
@@ -291,11 +334,16 @@ def main():
                 previous = rows
             stop.wait(2)
     finally:
-        if process is not None and process.poll() is None:
-            process.terminate()
-            try: process.wait(timeout=10)
-            except subprocess.TimeoutExpired: process.kill(); process.wait()
         server.shutdown()
+        try:
+            if worker is not None:
+                worker.stop()
+        finally:
+            if process is not None and process.poll() is None:
+                process.terminate()
+                try: process.wait(timeout=10)
+                except subprocess.TimeoutExpired: process.kill(); process.wait()
+            server.server_close()
 
 if __name__ == "__main__":
     main()

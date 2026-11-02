@@ -1,5 +1,5 @@
 {
-  "title": "ABL Wallbox",
+  "title": "WallboxPilot",
   "config": {
     "step": {
       "user": {
@@ -17,8 +17,8 @@
         }
       },
       "connection": {
-        "title": "ABL Wallbox verbinden",
-        "description": "Trage die Verbindungsdaten ein. RS485 verwendet 38400 Baud, 8E1. Für Shelly muss das mitgelieferte UART-Skript laufen; der HTTP-Port ist normalerweise 80.",
+        "title": "WallboxPilot verbinden",
+        "description": "Lokale Board-API: HTTP-Port 8080 und Zugriffsschlüssel des Boards. Direkte RS485-Verbindung: 38400 Baud, 8E1. Für Shelly muss das mitgelieferte UART-Skript laufen; HTTP-Port normalerweise 80.",
         "data": {
           "name": "Name",
           "host": "Host / IP-Adresse",
@@ -28,14 +28,16 @@
           "address": "Controller-Busadresse",
           "script_id": "Shelly-Skript-ID",
           "username": "Shelly-Benutzer",
-          "password": "Shelly-Passwort"
+          "password": "Shelly-Passwort",
+          "api_key": "Board-Zugriffsschlüssel"
         }
       }
     },
     "error": {
       "cannot_connect": "Keine gültige Antwort der Wallbox. Prüfe Host, Port, Busadresse und 38400 Baud / 8E1 sowie andere Programme an derselben Brücke.",
       "bridge_busy": "Die Brücke wird von einem anderen Programm verwendet. ABL-Software, COM-Umleitung und alte HA-Integration müssen die Verbindung freigeben.",
-      "invalid_connection": "Bitte einen Host ohne http:// oder ein serielles Gerät angeben."
+      "invalid_connection": "Bitte einen Host ohne http:// oder ein serielles Gerät angeben.",
+      "invalid_auth": "Der Zugriffsschlüssel des Boards ist nicht gültig. Bitte prüfen und erneut versuchen."
     },
     "abort": {
       "already_configured": "Dieser Controller ist bereits eingerichtet.",

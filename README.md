@@ -1,8 +1,18 @@
-# ABL Wallbox für Home Assistant
+# WallboxPilot · lokale Wallbox-Steuerung
 
-<img src="https://raw.githubusercontent.com/Christians8710/abl-wallbox-ha/main/custom_components/abl_wallbox/brand/icon.png" alt="ABL Wallbox Logo" width="160">
+<img src="https://raw.githubusercontent.com/Christians8710/wallboxpilot/main/custom_components/abl_wallbox/brand/icon.png" alt="WallboxPilot Logo" width="160">
 
-Lokale, kostenlose HACS-Integration für ABL eMH1 mit EVCC2/3-Controller. Steuert die Wallbox direkt über USB/RS485 oder eine transparente Netzwerkbrücke. Kein MQTT und keine Cloud erforderlich.
+Lokale, kostenlose Steuerung für ABL eMH1 mit EVCC2/3-Controller. Ein Board kann die Wallbox eigenständig bedienen und überwachen; Home Assistant greift über die lokale API darauf zu. Die bisherigen direkten USB-/RS485-, TCP- und Shelly-Verbindungen bleiben verfügbar. Kein MQTT und keine Cloud erforderlich.
+
+## Eigenständiger Board-Betrieb
+
+Das [Board-Update](bridge/README.md) ergänzt eine eigene Bedienseite für Laden, Einstellungen und Diagnose. Ein einzelner Dienst besitzt die serielle Verbindung und fragt Zustand und Fehlerzähler auch ohne Home Assistant ab. HA verwendet in diesem Modus **WallboxPilot / lokale API**, HTTP-Port **8080** und einen lokalen Zugriffsschlüssel.
+
+Bestehende Einträge werden über **Neu konfigurieren** umgestellt und nicht gelöscht. Dadurch bleiben Gerätezuordnung, Entitätskennungen, benutzerdefinierte Namen und vorhandene Automationen erhalten. Der bisherige HA-Fehlerverlauf wird mit den Beobachtungen des Boards zusammengeführt.
+
+Für bestehende Installationen bleiben die interne HA-Domain `abl_wallbox`, vorhandene Entitätskennungen, Dienstnamen und technische Board-Pfade erhalten. Der sichtbare Projektname lautet **WallboxPilot**. Ein Umbenennen der Anzeigenamen erfordert kein Löschen oder Neuanlegen der Integration.
+
+Beim Start und nach Verbindungsunterbrechungen liest der Dienst die tatsächlichen Werte. Ladefreigabe, Betriebsart und Stromgrenzen werden nicht automatisch neu gesetzt. Die Wallbox behält ihre eigenen Einstellungen; manuelle Befehle werden geprüft und anschließend zurückgelesen. PV-Überschussladen und Zeitprogramme sind noch nicht Bestandteil des Board-Dienstes.
 
 ## Funktionen
 
@@ -21,6 +31,7 @@ Die Einstellungen des Charge-Controller-Bereichs der ABL Configuration Software 
 
 ## Verbindung
 
+- **Lokale Board-API:** eigenständiger Board-Dienst, eigener Webzugang und API-Schlüssel. Der rohe serielle TCP-Zugang wird dabei auf `127.0.0.1` begrenzt. Mehrere API-Nutzer teilen sich dieselbe geprüfte Steuerung, ohne die serielle Verbindung zu übernehmen. Der Board-Modus verwaltet derzeit einen Controller pro Board.
 - **TCP:** transparente Übertragung von ABL Modbus **ASCII**. Host und TCP-Port der Brücke angeben. Die physische RS485-Seite der Brücke auf **38400 Baud, 8 Datenbits, gerade Parität, 1 Stoppbit (8E1)** stellen.
 - **USB/seriell:** stabiles Gerät wie `/dev/serial/by-id/...` verwenden. RFC2217 wird über einen entsprechenden `rfc2217://...`-Gerätepfad unterstützt.
 - **Shelly Pro RS485 Add-on:** eigener Zugangsweg über das mitgelieferte [UART-Brückenskript](shelly/README.md), inklusive Unterstützung der vorhandenen Shelly-Digest-Authentifizierung. Der native Modbus-RTU-Modus wird dafür nicht verwendet.
@@ -30,18 +41,18 @@ Die Einstellungen des Charge-Controller-Bereichs der ABL Configuration Software 
 
 ## Installation über HACS
 
-1. In HACS über das Menü **Benutzerdefinierte Repositories** die Adresse `https://github.com/Christians8710/abl-wallbox-ha` mit Typ **Integration** hinzufügen.
-2. **ABL Wallbox** herunterladen und Home Assistant neu starten.
-3. Unter **Einstellungen → Geräte & Dienste → Integration hinzufügen → ABL Wallbox** Host und Port der Brücke oder das serielle Gerät sowie die Controller-Busadresse angeben.
+1. In HACS über das Menü **Benutzerdefinierte Repositories** die Adresse `https://github.com/Christians8710/wallboxpilot` mit Typ **Integration** hinzufügen.
+2. **WallboxPilot** herunterladen und Home Assistant neu starten.
+3. Unter **Einstellungen → Geräte & Dienste → Integration hinzufügen → WallboxPilot** Host und Port der Brücke oder das serielle Gerät sowie die Controller-Busadresse angeben.
 4. Beim Einrichten werden ausschließlich Werte gelesen. Vorhandene Stromgrenzen, Betriebsart, Schieflastschutz und Ladefreigabe bleiben bestehen.
 
-Die bisherige Integration `ev_charger_modbus` muss für denselben Anschluss deaktiviert sein. Bereits vorhandene Automationen verwenden deren alte Entitäten weiter; sie müssen bei Bedarf auf die neuen ABL-Wallbox-Entitäten umgestellt werden.
+Die bisherige Integration `ev_charger_modbus` muss für denselben Anschluss deaktiviert sein. Bereits vorhandene Automationen verwenden deren alte Entitäten weiter; sie müssen bei Bedarf auf die neuen WallboxPilot-Entitäten umgestellt werden.
 
 ## Wallbox-Bedienseite
 
 Die optionale [Wallbox-Bedienseite](frontend/README.md) bündelt Laden, Einstellungen und Diagnose in einer responsiven Petrol-Oberfläche. Sie wird lokal als Dashboard-Karte eingebunden; die normalen HA-Geräteansichten bleiben verfügbar.
 
-Das [Update für die Tinker-Board-Brücke](bridge/README.md) bringt denselben Stil auf die Statusseite und die WLAN-Einrichtung. Die Dashboard-Dateien und das Brücken-Update stehen als getrennte ZIP-Pakete bei den [Releases](https://github.com/Christians8710/abl-wallbox-ha/releases) bereit. Ein HACS-Update allein installiert weder die Dashboard-Ressource noch die Software auf dem Board.
+Das [Board-Update](bridge/README.md) bringt denselben Stil auf die eigenständige Wallbox-Steuerung, den Boardstatus und die WLAN-Einrichtung. Dashboard-Dateien und Board-Update stehen als getrennte ZIP-Pakete bei den [Releases](https://github.com/Christians8710/wallboxpilot/releases) bereit. Ein HACS-Update allein installiert weder die Dashboard-Ressource noch die Software auf dem Board. Der Wechsel zum eigenständigen Betrieb erfolgt ausdrücklich mit der dort beschriebenen Migration.
 
 ## Die unterschiedlichen Stromwerte
 
@@ -86,7 +97,7 @@ Die HA-Tests benötigen Linux und die in der CI festgelegte stabile Home-Assista
 - [ABL Configuration Software – Anleitung](https://www.ablmobility.de/global/downloads/anleitungen/zubehoer/Bedienungsanleitung_ABL-ConfigurationSoftware_DE.pdf)
 - [micerny/abl-charger: unabhängiges Protokollbeispiel](https://github.com/micerny/abl-charger)
 
-Eigenständige Implementierung. Keine Herstellerprogrammdateien werden mitgeliefert. Nicht mit ABL verbunden. MIT-Lizenz.
+Unabhängiges Open-Source-Projekt. Nicht mit den genannten Hardwareherstellern verbunden. Herstellernamen bezeichnen die unterstützte Hardware. Keine Herstellerprogrammdateien werden mitgeliefert. MIT-Lizenz.
 
 ## ❤️ Projekt unterstützen
 

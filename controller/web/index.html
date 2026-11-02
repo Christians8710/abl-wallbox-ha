@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="de"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WallboxPilot</title><link rel="icon" type="image/png" href="/assets/icon.png">
+<link rel="stylesheet" href="/assets/abl-design.css"><script src="/controller-assets/app.js" defer></script>
+</head><body class="abl-app"><a class="abl-skip" href="#inhalt">Zum Inhalt</a>
+<div class="abl-shell">
+  <header class="abl-header"><img class="abl-logo" src="/assets/icon.png" width="76" height="76" alt="">
+    <div><div class="abl-eyebrow">EIGENSTÄNDIGE LOKALE STEUERUNG</div><h1>WallboxPilot</h1><p class="abl-muted">Laden, Einstellungen und Diagnose direkt am Board.</p></div>
+  </header>
+  <section id="login" class="abl-card" hidden><h2>Anmelden</h2>
+    <p>Verwende den lokalen Zugriffsschlüssel deines Boards. Derselbe Schlüssel verbindet Home Assistant mit der API.</p>
+    <form id="login-form"><div class="abl-field"><label for="api-key">Zugriffsschlüssel</label><input id="api-key" type="password" autocomplete="current-password" required></div>
+    <button class="abl-primary" type="submit">Anmelden</button><p id="login-message" class="abl-notice" role="status" aria-live="polite"></p></form>
+  </section>
+  <div id="application" hidden>
+    <nav class="abl-nav" aria-label="Bereiche"><a href="#laden">Übersicht</a><a href="#einstellungen">Einstellungen</a><a href="#diagnose">Diagnose</a><a href="/bridge/">Boardstatus</a><button type="button" id="logout">Abmelden</button></nav>
+    <p id="feedback" class="abl-notice" role="status" aria-live="polite"></p>
+    <div id="uncertain" class="abl-notice" hidden><p>Das Ergebnis der letzten Anfrage ist noch unklar. Prüfe den Status, bevor du weitere Änderungen ausführst.</p><button type="button" id="retry">Ergebnis der Anfrage prüfen</button><button type="button" id="dismiss">Status geprüft · Vorgang schließen</button></div>
+    <p id="connection-message" class="abl-notice abl-error" role="status" aria-live="polite"></p>
+    <main class="abl-grid" id="inhalt" tabindex="-1">
+      <div class="abl-stack">
+        <section class="abl-card" id="laden"><h2>Laden</h2><span id="connection" class="abl-badge">Verbindung wird geprüft</span>
+          <p id="state-description" class="abl-status">Werte werden geladen …</p><p id="vehicle" class="abl-muted"></p>
+          <div class="abl-metrics"><div class="abl-metric"><span>Leistung · geschätzt</span><strong data-value="estimated_power" data-unit="W">—</strong></div><div class="abl-metric"><span>Effektive Freigabe</span><strong data-value="effective_current" data-unit="A">—</strong></div></div>
+          <form data-operation="set_current"><div class="abl-field"><label for="requested-current">Ladestromvorgabe (A)</label><input id="requested-current" name="value" type="number" min="0" max="80" step="1" inputmode="numeric" data-field="requested_current" aria-describedby="current-help" required><small id="current-help">0 A pausiert. Ab 6 A bis zur festen Stromgrenze.</small></div>
+          <div class="abl-actions"><button class="abl-primary" type="submit">Ladestrom übernehmen</button><button id="enabled" type="button">Ladefreigabe ändern</button></div></form>
+        </section>
+        <details class="abl-card" id="einstellungen"><summary>Einstellungen</summary><p class="abl-muted">Feste Einstellungen lassen sich nur ohne angeschlossenes Fahrzeug ändern.</p>
+          <form data-operation="configure" data-setting="installation_limit"><div class="abl-field"><label for="installation-limit">Feste Stromgrenze (A)</label><input id="installation-limit" name="value" type="number" min="6" max="80" step="1" data-field="installation_limit" required></div><button type="submit">Stromgrenze speichern</button></form>
+          <form data-operation="configure" data-setting="mode"><div class="abl-field"><label for="mode">Betriebsart</label><select id="mode" name="value" data-field="mode"><option value="standalone">Standalone</option><option value="rfid">RFID / lokale Freigabe</option><option value="sbc">Externe Steuerung / SBC</option></select></div><button type="submit">Betriebsart speichern</button></form>
+          <form data-operation="configure" data-setting="imbalance"><div class="abl-field"><label for="imbalance">Schieflasterkennung</label><select id="imbalance" name="value" data-field="imbalance"><option value="off">Aus</option><option value="16">16 A</option><option value="20">20 A</option></select></div><button type="submit">Schieflasterkennung speichern</button></form>
+          <form data-operation="configure" data-setting="address"><div class="abl-field"><label for="address">Busadresse</label><input id="address" name="value" type="number" min="1" max="16" step="1" data-field="address" required></div><button type="submit">Busadresse speichern</button></form>
+          <form data-operation="configure" data-setting="fallback_enabled"><label class="abl-check"><input name="value" type="checkbox" data-field="fallback_enabled">Fallback bei Steuerungsausfall</label><button type="submit">Fallback speichern</button></form>
+          <form data-operation="configure" data-setting="start_on_boot"><label class="abl-check"><input name="value" type="checkbox" data-field="start_on_boot">Ladefreigabe nach Neustart</label><button type="submit">Startverhalten speichern</button></form>
+        </details>
+      </div>
+      <aside class="abl-stack"><section class="abl-card"><h2>Auf einen Blick</h2><dl class="abl-list">
+        <div><dt>Feste Stromgrenze</dt><dd data-value="installation_limit" data-unit="A">—</dd></div><div><dt>Nennstrom</dt><dd data-value="rated_current" data-unit="A">—</dd></div>
+        <div><dt>Strom L1</dt><dd data-value="current_l1" data-unit="A">—</dd></div><div><dt>Strom L2</dt><dd data-value="current_l2" data-unit="A">—</dd></div><div><dt>Strom L3</dt><dd data-value="current_l3" data-unit="A">—</dd></div>
+      </dl></section><section class="abl-card"><h2>Aktuelle Hinweise</h2><div id="problems">Werte werden geladen …</div></section>
+      <section class="abl-card"><h2>Home Assistant</h2><p>Wähle in der WallboxPilot-Integration die lokale API dieses Boards. Die Steuerung und Aufzeichnung auf dem Board laufen unabhängig von HA.</p><details><summary>Verbindungsdaten</summary><p>Host: <strong id="api-host"></strong><br>Port: <strong id="api-port"></strong><br>Busadresse: <strong data-value="address">—</strong></p><p class="abl-muted">Der Zugriffsschlüssel wird aus Sicherheitsgründen nicht auf dieser Seite angezeigt.</p></details></section></aside>
+      <details class="abl-card abl-full" id="diagnose"><summary>Diagnose und Fehlerverlauf</summary>
+        <dl class="abl-list"><div><dt>Firmware</dt><dd data-value="firmware">—</dd></div><div><dt>Hardware</dt><dd data-value="hardware">—</dd></div><div><dt>Betriebszustand</dt><dd data-value="state">—</dd></div><div><dt>PWM</dt><dd data-value="duty_cycle" data-unit="%">—</dd></div><div><dt>Freigabeeingang EN1</dt><dd data-value="en1_closed">—</dd></div><div><dt>Freigabeeingang EN2</dt><dd data-value="en2_closed">—</dd></div><div><dt>Letzte erfolgreiche Abfrage</dt><dd id="observed">—</dd></div></dl>
+        <div class="abl-actions"><button type="button" data-command="refresh">Werte aktualisieren</button></div>
+        <h3>Gespeicherte Fehlerereignisse</h3><p class="abl-muted">Die Zähler zeigen gespeicherte Ereignisse und keine aktuelle Störung an.</p>
+        <div class="abl-table-wrap" tabindex="0" role="region" aria-label="Fehlerzähler"><table><thead><tr><th scope="col">Code</th><th scope="col">Beschreibung</th><th scope="col">Anzahl</th></tr></thead><tbody id="counters"></tbody></table></div>
+        <h3>Auf dem Board beobachtet</h3><div id="history"></div><p class="abl-muted">Zeitpunkte geben an, wann das Board ein Ereignis beobachtet hat. Der Controller speichert Zähler ohne Zeitstempel.</p>
+        <details><summary>Wartung</summary><div class="abl-actions"><button type="button" data-command="scan">Bus durchsuchen</button><button type="button" data-command="restart">Wallbox neu starten</button><button type="button" data-command="clear_fault_counters">Fehlerzähler löschen</button></div><pre id="scan-result" style="white-space:pre-wrap"></pre></details>
+        <details><summary>Technische Fehlermeldung</summary><pre id="technical-error" style="white-space:pre-wrap"></pre></details>
+      </details>
+    </main>
+  </div>
+  <noscript><p class="abl-notice">Für die lokale Wallbox-Steuerung bitte JavaScript aktivieren.</p></noscript>
+  <footer class="abl-footer"><span>© 2026 Christians8710 · WallboxPilot</span><a href="/assets/LICENSE">MIT-Lizenz</a></footer>
+</div></body></html>

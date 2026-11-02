@@ -10,6 +10,17 @@ installer = module_from_spec(spec)
 spec.loader.exec_module(installer)
 
 class UpdateTests(unittest.TestCase):
+    def test_standalone_migration_preserves_original_settings_and_is_opt_in(self):
+        original = {'base_port': 5020, 'status_port': 8080, 'baudrate': 38400, 'comset': '8E1', 'other': {'preserve': True}}
+        actual = installer.standalone_config(original, address=2)
+        self.assertNotIn('controller', original)
+        self.assertEqual(actual['controller'], {'enabled': True, 'address': 2, 'tcp_port': 5020})
+        self.assertEqual(actual['listen_host'], '127.0.0.1')
+        self.assertEqual(actual['other'], original['other'])
+        self.assertEqual(actual['baudrate'], original['baudrate'])
+        with self.assertRaises(ValueError):
+            installer.standalone_config(original, address=True)
+
     def test_all_payload_files_are_present_and_parse(self):
         installer.validate_sources()
 

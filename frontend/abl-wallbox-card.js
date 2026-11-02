@@ -30,7 +30,7 @@ class ABLWallboxCard extends HTMLElement {
   set hass(hass) { this._hass = hass; this._discover(); this._update(); }
   getCardSize() { return 20; }
   getGridOptions() { return {columns: 'full', rows: 'auto'}; }
-  static getStubConfig() { return {type: 'custom:abl-wallbox-card'}; }
+  static getStubConfig() { return {type: 'custom:wallboxpilot-card'}; }
   _build() {
     this.shadowRoot.replaceChildren();
     const css = node('link'); css.rel = 'stylesheet';
@@ -44,7 +44,7 @@ class ABLWallboxCard extends HTMLElement {
     const logo = node('img', undefined, 'abl-logo'); logo.alt = ''; logo.width = logo.height = 76;
     logo.src = new URL('./icon.png', import.meta.url).href;
     const title = node('div'); title.append(node('div', 'LOKALE STEUERUNG', 'abl-eyebrow'),
-      node('h1', this._config.title || 'ABL Wallbox'), node('p', 'Laden, Status und Einstellungen.', 'abl-muted'));
+      node('h1', this._config.title || 'WallboxPilot'), node('p', 'Laden, Status und Einstellungen.', 'abl-muted'));
     header.append(logo, title); shell.append(header);
     const nav = node('nav', undefined, 'abl-nav'); nav.ariaLabel = 'Wallbox-Bereiche';
     for (const [id, label] of [['laden', 'Übersicht'], ['einstellungen', 'Einstellungen'], ['diagnose', 'Diagnose']]) {
@@ -252,7 +252,7 @@ class ABLWallboxCard extends HTMLElement {
     this._choose.value = this._entry;
     this._choose.disabled = this._busy;
     this._notice.textContent = !this._registry ? 'Wallbox wird geladen …' : !this._entry ?
-      (this._registry.length ? 'Wähle eine Wallbox aus.' : 'Noch keine ABL Wallbox eingerichtet. Füge die Integration unter Geräte & Dienste hinzu.') :
+      (this._registry.length ? 'Wähle eine Wallbox aus.' : 'Noch keine WallboxPilot-Integration eingerichtet. Füge die Integration unter Geräte & Dienste hinzu.') :
       !available ? 'Keine Verbindung zur Wallbox. Die Bedienung ist vorübergehend gesperrt.' : '';
     this._notice.className = `abl-notice${this._entry && !available ? ' abl-error' : ''}`;
     const activeFault = this._get('binary_sensor.fault')?.state === 'on';
@@ -308,7 +308,9 @@ class ABLWallboxCard extends HTMLElement {
   }
 }
 if (!customElements.get('abl-wallbox-card')) customElements.define('abl-wallbox-card', ABLWallboxCard);
+// Keep the existing element type usable in dashboards while offering the neutral project name.
+if (!customElements.get('wallboxpilot-card')) customElements.define('wallboxpilot-card', class extends ABLWallboxCard {});
 window.customCards = window.customCards || [];
-if (!window.customCards.some(card => card.type === 'abl-wallbox-card')) window.customCards.push({
-  type: 'abl-wallbox-card', name: 'ABL Wallbox', description: 'Lokale Wallbox-Bedienung mit Status, Einstellungen und Diagnose.', preview: true,
+if (!window.customCards.some(card => card.type === 'wallboxpilot-card')) window.customCards.push({
+  type: 'wallboxpilot-card', name: 'WallboxPilot', description: 'Lokale Wallbox-Bedienung mit Status, Einstellungen und Diagnose.', preview: true,
 });
