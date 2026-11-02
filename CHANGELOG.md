@@ -1,5 +1,12 @@
 # Änderungen
 
+## 1.2.1
+
+- Board-Oberfläche folgt dem hellen oder dunklen Systemdesign; die Dashboard-Karte folgt dem wirksamen HA-Design. Petrol, Gold und das originale Logo bleiben erhalten.
+- Eingabefelder und Auswahllisten mit besser erkennbaren Umrandungen; sichtbarer Druckzustand für Schaltflächen und Unterstützung für erhöhten Kontrast.
+- Rückmeldungen nennen die bestätigte Einstellung oder Aktion. Ausstehende Werte und angeforderte Neustarts werden entsprechend gekennzeichnet.
+- Bestehende Entitäten, Eingabeentwürfe, Fehlerverlauf und Controller-Einstellungen bleiben erhalten. Keine Änderung der Ladesteuerung oder WLAN-Konfiguration.
+
 ## 1.2.0
 
 - Neuer Projektname **WallboxPilot** für GitHub, Home Assistant und Board-Oberflächen. Die internen HA-Kennungen bleiben für bestehende Installationen erhalten.
