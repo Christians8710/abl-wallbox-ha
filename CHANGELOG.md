@@ -2,6 +2,7 @@
 
 ## 1.2.0
 
+- Neuer Projektname **WallboxPilot** für GitHub, Home Assistant und Board-Oberflächen. Die internen HA-Kennungen bleiben für bestehende Installationen erhalten.
 - Eigenständiger Board-Dienst mit lokaler Wallbox-Bedienseite, geprüften Befehlen, laufender Statusabfrage und dauerhaftem Fehlerverlauf ohne HA.
 - Authentifizierte lokale API mit Browser-Anmeldung, CSRF-Schutz und dauerhaftem Wiederholschutz für die letzten 128 Anfragekennungen.
 - Neue API-Verbindungsart in HA. Umkonfiguration des bestehenden Eintrags erhält alle 50 Entitäten und die Gerätezuordnung; bestehender HA-Verlauf bleibt erhalten. Adressänderungen desselben gebundenen Boards werden übernommen.
