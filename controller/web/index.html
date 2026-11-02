@@ -1,12 +1,12 @@
 <!doctype html>
 <html lang="de"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ABL Wallbox</title><link rel="icon" type="image/png" href="/assets/icon.png">
+<title>WallboxPilot</title><link rel="icon" type="image/png" href="/assets/icon.png">
 <link rel="stylesheet" href="/assets/abl-design.css"><script src="/controller-assets/app.js" defer></script>
 </head><body class="abl-app"><a class="abl-skip" href="#inhalt">Zum Inhalt</a>
 <div class="abl-shell">
   <header class="abl-header"><img class="abl-logo" src="/assets/icon.png" width="76" height="76" alt="">
-    <div><div class="abl-eyebrow">EIGENSTÄNDIGE LOKALE STEUERUNG</div><h1>ABL Wallbox</h1><p class="abl-muted">Laden, Einstellungen und Diagnose direkt am Board.</p></div>
+    <div><div class="abl-eyebrow">EIGENSTÄNDIGE LOKALE STEUERUNG</div><h1>WallboxPilot</h1><p class="abl-muted">Laden, Einstellungen und Diagnose direkt am Board.</p></div>
   </header>
   <section id="login" class="abl-card" hidden><h2>Anmelden</h2>
     <p>Verwende den lokalen Zugriffsschlüssel deines Boards. Derselbe Schlüssel verbindet Home Assistant mit der API.</p>
@@ -39,7 +39,7 @@
         <div><dt>Feste Stromgrenze</dt><dd data-value="installation_limit" data-unit="A">—</dd></div><div><dt>Nennstrom</dt><dd data-value="rated_current" data-unit="A">—</dd></div>
         <div><dt>Strom L1</dt><dd data-value="current_l1" data-unit="A">—</dd></div><div><dt>Strom L2</dt><dd data-value="current_l2" data-unit="A">—</dd></div><div><dt>Strom L3</dt><dd data-value="current_l3" data-unit="A">—</dd></div>
       </dl></section><section class="abl-card"><h2>Aktuelle Hinweise</h2><div id="problems">Werte werden geladen …</div></section>
-      <section class="abl-card"><h2>Home Assistant</h2><p>Wähle in der ABL-Integration die lokale API dieses Boards. Die Steuerung und Aufzeichnung auf dem Board laufen unabhängig von HA.</p><details><summary>Verbindungsdaten</summary><p>Host: <strong id="api-host"></strong><br>Port: <strong id="api-port"></strong><br>Busadresse: <strong data-value="address">—</strong></p><p class="abl-muted">Der Zugriffsschlüssel wird aus Sicherheitsgründen nicht auf dieser Seite angezeigt.</p></details></section></aside>
+      <section class="abl-card"><h2>Home Assistant</h2><p>Wähle in der WallboxPilot-Integration die lokale API dieses Boards. Die Steuerung und Aufzeichnung auf dem Board laufen unabhängig von HA.</p><details><summary>Verbindungsdaten</summary><p>Host: <strong id="api-host"></strong><br>Port: <strong id="api-port"></strong><br>Busadresse: <strong data-value="address">—</strong></p><p class="abl-muted">Der Zugriffsschlüssel wird aus Sicherheitsgründen nicht auf dieser Seite angezeigt.</p></details></section></aside>
       <details class="abl-card abl-full" id="diagnose"><summary>Diagnose und Fehlerverlauf</summary>
         <dl class="abl-list"><div><dt>Firmware</dt><dd data-value="firmware">—</dd></div><div><dt>Hardware</dt><dd data-value="hardware">—</dd></div><div><dt>Betriebszustand</dt><dd data-value="state">—</dd></div><div><dt>PWM</dt><dd data-value="duty_cycle" data-unit="%">—</dd></div><div><dt>Freigabeeingang EN1</dt><dd data-value="en1_closed">—</dd></div><div><dt>Freigabeeingang EN2</dt><dd data-value="en2_closed">—</dd></div><div><dt>Letzte erfolgreiche Abfrage</dt><dd id="observed">—</dd></div></dl>
         <div class="abl-actions"><button type="button" data-command="refresh">Werte aktualisieren</button></div>
@@ -52,5 +52,5 @@
     </main>
   </div>
   <noscript><p class="abl-notice">Für die lokale Wallbox-Steuerung bitte JavaScript aktivieren.</p></noscript>
-  <footer class="abl-footer"><span>© 2026 Christians8710 · ABL Wallbox</span><a href="/assets/LICENSE">MIT-Lizenz</a></footer>
+  <footer class="abl-footer"><span>© 2026 Christians8710 · WallboxPilot</span><a href="/assets/LICENSE">MIT-Lizenz</a></footer>
 </div></body></html>
