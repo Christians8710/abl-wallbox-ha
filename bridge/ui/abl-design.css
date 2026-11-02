@@ -1,4 +1,4 @@
-/* ABL Wallbox · shared local design tokens. No external resources. */
+/* WallboxPilot · shared local design tokens. No external resources. */
 :host, :root {
   --abl-bg: #10252c; --abl-card: #18363e; --abl-border: #36525b;
   --abl-text: #edf6f6; --abl-muted: #b6cdd0; --abl-gold: #f5c66a;
