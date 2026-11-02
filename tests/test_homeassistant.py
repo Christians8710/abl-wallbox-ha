@@ -193,13 +193,14 @@ async def test_reconfigure_tcp_to_api_preserves_all_entity_and_device_ids(hass, 
         result = await hass.config_entries.flow.async_init(DOMAIN, context={'source': 'reconfigure', 'entry_id': entry.entry_id})
         result = await hass.config_entries.flow.async_configure(result['flow_id'], user_input={'connection_type': 'api'})
         result = await hass.config_entries.flow.async_configure(result['flow_id'], user_input={
-            'name': 'ABL Test', 'host': 'board.example', 'port': 8080, 'address': 1, 'api_key': 'test-only-' + 'x' * 32,
+            'name': 'WallboxPilot', 'host': 'board.example', 'port': 8080, 'address': 1, 'api_key': 'test-only-' + 'x' * 32,
         })
         assert result['type'] == 'abort' and result['reason'] == 'reconfigure_successful'
         await hass.async_block_till_done()
         assert old_bus.closed
         assert len(hass.data[DOMAIN]) == 1
         assert entry.data['connection_type'] == 'api' and entry.data['controller_id'] == runtime.controller_id
+        assert entry.title == 'WallboxPilot'
         assert {(item.unique_id, item.entity_id, item.device_id) for item in er.async_entries_for_config_entry(registry, entry.entry_id)} == original_entities
         assert dr.async_get(hass).async_get(original_device.id).identifiers == original_identifiers
         assert history in entry.runtime_data.history
