@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""Update an existing ABL bridge, preserving configuration and rolling back on failure.
+"""Update an existing WallboxPilot board installation, preserving configuration and rolling back on failure.
 
 Copyright (c) 2026 Christians8710. MIT License. Does not install an OS or dependencies.
 """
@@ -172,7 +172,7 @@ def check_health(port, before):
                 config = json.loads(CONFIG.read_text())
                 autonomous = config.get('controller', {}).get('enabled')
                 if autonomous:
-                    if '<h1>ABL Wallbox</h1>' not in page:
+                    if '<h1>WallboxPilot</h1>' not in page:
                         raise RuntimeError('Standalone controller page not loaded')
                     key = Path('/var/lib/abl-bridge/controller/api-key').read_text().strip()
                     from urllib.request import Request
@@ -181,7 +181,7 @@ def check_health(port, before):
                         state = json.load(state_response)
                     if state.get('api_version') != 1 or not state.get('available'):
                         raise RuntimeError('Standalone controller cannot read the wallbox')
-                elif '<h1>ABL Netzwerkbrücke</h1>' not in page or 'id="status-button"' not in page:
+                elif '<h1>WallboxPilot</h1>' not in page or 'id="status-button"' not in page:
                     raise RuntimeError('New status page not loaded')
             return
         except (OSError, ValueError, KeyError, RuntimeError) as error:
@@ -230,7 +230,7 @@ def install(*, standalone=False, address=1, controller_port=None):
             'usb_ports_preserved': True, 'board_rebooted': False}
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Update an existing ABL network bridge')
+    parser = argparse.ArgumentParser(description='Update an existing WallboxPilot board')
     parser.add_argument('--check', action='store_true', help='Validate without writing or restarting services')
     parser.add_argument('--standalone', action='store_true', help='Enable standalone controller; first release HA/COM TCP connection')
     parser.add_argument('--address', type=int, default=1, help='Existing controller bus address; does not write a new address')

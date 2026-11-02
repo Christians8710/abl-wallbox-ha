@@ -1,5 +1,5 @@
 [Unit]
-Description=ABL durable network diagnostics
+Description=WallboxPilot durable network diagnostics
 After=NetworkManager.service
 
 [Service]

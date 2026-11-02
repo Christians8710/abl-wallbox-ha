@@ -35,7 +35,7 @@ if not ui_path.is_dir():
 upstream_create_app = portal.create_app
 
 def create_abl_app(log):
-    """Use local ABL templates; leave radio, credentials and routes upstream."""
+    """Use local WallboxPilot templates; leave radio, credentials and routes upstream."""
     portal.TEMPLATE_PATH = str(ui_path / 'portal')
     app = upstream_create_app(log)
 

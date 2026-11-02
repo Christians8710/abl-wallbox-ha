@@ -1,4 +1,4 @@
-# ABL-Board · Update 1.2.0
+# WallboxPilot · Board-Update 1.2.0
 
 Dieses Paket aktualisiert eine bereits eingerichtete ABL-CONFCAB-Brücke auf einem Debian-/Armbian-Board. Es enthält **kein SD-Karten-Abbild** und installiert weder ein Betriebssystem noch fehlende Abhängigkeiten.
 
@@ -8,11 +8,11 @@ Optionaler eigenständiger Controller mit eigener Wallbox-Bedienseite und lokale
 
 ## Zum eigenständigen Controller wechseln
 
-1. HA auf Integration **1.2.0** aktualisieren. Den bestehenden ABL-Eintrag sichern und vorübergehend deaktivieren. ABL-PC-Software und COM-Umleitungen schließen. Den Eintrag nicht löschen.
+1. HA auf Integration **1.2.0** aktualisieren. Den bestehenden Wallbox-Eintrag sichern und vorübergehend deaktivieren. ABL-PC-Software und COM-Umleitungen schließen. Den Eintrag nicht löschen.
 2. Das Board-ZIP entpacken. Mit `sudo /usr/bin/python3 install-update.py --check --standalone --address 1` vorprüfen. `--address` ist die vorhandene Busadresse und programmiert keine neue Adresse. Bei einem anderen USB-Adapterport zusätzlich `--controller-port PORT` angeben.
 3. Mit `sudo /usr/bin/python3 install-update.py --standalone --address 1` aktivieren. Der Installer sichert Programme und Brückenkonfiguration, startet den Dienst neu und prüft eine echte Antwort der Wallbox. Bei einem Fehler stellt er den bisherigen Betrieb wieder her.
 4. Den lokalen Zugriffsschlüssel am Board mit `sudo cat /var/lib/abl-bridge/controller/api-key` auslesen. Er wird nicht in URLs, Logmeldungen oder Diagnose-Downloads ausgegeben. `http://abl-bridge.local:8080/` öffnen und damit anmelden; alternativ die aktuelle IP des Boards verwenden.
-5. In HA beim **bestehenden** ABL-Eintrag **Neu konfigurieren** wählen: **Eigenständiger ABL-Controller / lokale API**, Host des Boards, Port **8080**, vorhandene Busadresse und Zugriffsschlüssel. Den Eintrag wieder aktivieren. Geräte- und Entitätskennungen bleiben erhalten.
+5. In HA beim **bestehenden** Wallbox-Eintrag **Neu konfigurieren** wählen: **WallboxPilot / lokale API**, Host des Boards, Port **8080**, vorhandene Busadresse und Zugriffsschlüssel. Den Eintrag wieder aktivieren. Geräte- und Entitätskennungen bleiben erhalten.
 
 Danach liegt die Wallbox-Steuerung unter `/` und der Boardstatus unter `/bridge/`. Die WLAN-Einrichtung bleibt bei Comitup. Der rohe serielle TCP-Port ist nur unter `127.0.0.1` auf dem Board erreichbar; die Windows-COM-Umleitung ist dann kein paralleler Zugangsweg. Die API ist für das lokale Netz vorgesehen.
 
@@ -44,7 +44,7 @@ Die vorhandenen Dienste `abl-bridge` und `comitup-web`, die Programme unter `/us
 
 ## Aktualisieren
 
-1. Das Brücken-ZIP aus dem passenden GitHub-Release auf das Board übertragen und in einen eigenen Ordner entpacken.
+1. Das Board-ZIP aus dem passenden GitHub-Release auf das Board übertragen und in einen eigenen Ordner entpacken.
 2. In den entpackten Ordner wechseln und ohne Änderungen vorprüfen:
 
    ```sh
@@ -67,7 +67,7 @@ Nach Erfolg die bisherige Statusadresse, beispielsweise `http://abl-bridge.local
 
 Der manuelle Board-Neustart erfordert weiterhin Bestätigung, einen passenden Host und Ursprung sowie ein CSRF-Token. Doppelte Anfragen führen nicht zu mehrfach geplanten Neustarts. Die WLAN-Formulare verwenden die vorhandenen Comitup-Routen und Feldnamen. Verbindungsansichten zeigen kein Passwort an.
 
-Neue ABL-Oberflächen und Installer: © 2026 Christians8710, [MIT-Lizenz](LICENSE). Der installierte WLAN-Dienst Comitup bleibt unter GPL-2.0 oder neuer. Dessen Pakete und vorhandene Lizenzhinweise werden nicht ersetzt. Einzelheiten zur Gestaltung stehen in [ui/README.md](ui/README.md).
+WallboxPilot-Oberflächen und Installer: © 2026 Christians8710, [MIT-Lizenz](LICENSE). Der installierte WLAN-Dienst Comitup bleibt unter GPL-2.0 oder neuer. Dessen Pakete und vorhandene Lizenzhinweise werden nicht ersetzt. Einzelheiten zur Gestaltung stehen in [ui/README.md](ui/README.md).
 
 ## Prüfungen
 

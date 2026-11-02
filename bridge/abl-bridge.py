@@ -176,6 +176,9 @@ class StatusPage(BaseHTTPRequestHandler):
             body = ((UI / "status.html").read_text(encoding="utf-8")
                     .replace("{{STATUS}}", message)
                     .replace("{{ROWS}}", rows or '<tr><td colspan="3">Noch kein USB-Adapter angeschlossen.</td></tr>')
+                    .replace("{{CONTROL_HINT}}", '<a href="/">Wallbox-Steuerung öffnen</a> – Laden und Einstellungen funktionieren auch ohne Home Assistant.' if api else 'Laden und Wallbox-Einstellungen bedienst du in Home Assistant.')
+                    .replace("{{HA_CONNECTION_HINT}}", 'Wähle WallboxPilot / lokale API, die Netzwerkadresse dieses Boards und den HTTP-Port ' + str(self.server.server_address[1]) + '.' if api else 'Verwende die Netzwerkadresse dieses Boards und den passenden TCP-Port aus der Anschlussliste.')
+                    .replace("{{CONNECTION_DETAILS}}", 'Der Board-Dienst besitzt die serielle Verbindung. Home Assistant greift mit dem lokalen Zugriffsschlüssel über die API zu.' if api else 'Nur eine Anwendung kann den Anschluss gleichzeitig nutzen. Beende die ABL-PC-Software und virtuelle COM-Umleitungen, bevor Home Assistant zugreift.')
                     .replace("{{COUNT}}", str(len(status["adapters"]))) + '''<script>
 const csrfToken='''+json.dumps(reboot_token)+''';
 const currentBoot='''+json.dumps(boot_id)+''';
