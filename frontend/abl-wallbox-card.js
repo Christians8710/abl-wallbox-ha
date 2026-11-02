@@ -27,7 +27,12 @@ class ABLWallboxCard extends HTMLElement {
     this._entities = {}; this._registry = null; this._dirty.clear();
     this._build(); this._discover();
   }
-  set hass(hass) { this._hass = hass; this._discover(); this._update(); }
+  set hass(hass) {
+    this._hass = hass;
+    if (typeof hass?.themes?.darkMode === 'boolean') this.setAttribute('data-abl-theme', hass.themes.darkMode ? 'dark' : 'light');
+    else this.removeAttribute('data-abl-theme');
+    this._discover(); this._update();
+  }
   getCardSize() { return 20; }
   getGridOptions() { return {columns: 'full', rows: 'auto'}; }
   static getStubConfig() { return {type: 'custom:wallboxpilot-card'}; }
@@ -84,9 +89,11 @@ class ABLWallboxCard extends HTMLElement {
       '0 A pausiert das Laden. Ab 6 A bis zur festen Stromgrenze.');
     this._saveCurrent = this._button(charge, 'Ladestrom übernehmen', () => this._saveNumber('requested_current'), true);
     this._saveCurrent.dataset.entityKey = 'number.requested_current';
-    this._enable = this._button(charge, 'Ladefreigabe ändern', () => {
+    this._enable = this._button(charge, 'Ladefreigabe ändern', async () => {
       const state = this._get('switch.enabled');
-      return this._call('switch', state?.state === 'on' ? 'turn_off' : 'turn_on', {entity_id: this._entities['switch.enabled']});
+      const enabled = state?.state !== 'on';
+      await this._call('switch', enabled ? 'turn_on' : 'turn_off', {entity_id: this._entities['switch.enabled']});
+      return enabled ? 'Ladefreigabe erteilt.' : 'Ladefreigabe gesperrt.';
     });
     const overview = node('section', undefined, 'abl-card'); overview.append(node('h2', 'Auf einen Blick')); side.append(overview);
     this._values = {};
@@ -117,7 +124,9 @@ class ABLWallboxCard extends HTMLElement {
     this._readings(diag, [['sensor.firmware', 'Firmware'], ['sensor.hardware', 'Hardware'],
       ['sensor.state', 'Betriebszustand'], ['sensor.duty_cycle', 'PWM'], ['sensor.system_flags', 'Systemflags'],
       ['binary_sensor.en1_closed', 'Freigabeeingang EN1'], ['binary_sensor.en2_closed', 'Freigabeeingang EN2']]);
-    this._button(diag, 'Werte aktualisieren', () => this._call('button', 'press', {entity_id: this._entities['button.refresh']}));
+    this._button(diag, 'Werte aktualisieren', async () => {
+      await this._call('button', 'press', {entity_id: this._entities['button.refresh']}); return 'Wallbox-Daten aktualisiert.';
+    });
     diag.append(node('h3', 'Fehlerzähler'));
     this._counters = node('div', undefined, 'abl-table-wrap'); this._counters.tabIndex = 0;
     this._counters.setAttribute('role', 'region'); this._counters.setAttribute('aria-label', 'Fehlerzähler'); diag.append(this._counters);
@@ -132,12 +141,16 @@ class ABLWallboxCard extends HTMLElement {
         service_data: {config_entry_id: this._entry}, return_response: true});
       const controllers = result?.response?.controllers || [];
       this._scanResult.textContent = controllers.length ? JSON.stringify(controllers, null, 2) : 'Keine weiteren Controller gefunden.';
+      return controllers.length ? `Bus-Suche abgeschlossen: ${controllers.length} Controller gefunden.` : 'Bus-Suche abgeschlossen: Keine Controller gefunden.';
     });
     this._scanResult = node('pre'); this._scanResult.style.whiteSpace = 'pre-wrap'; maintenance.append(this._scanResult);
-    this._button(maintenance, 'Wallbox neu starten', () => this._call('button', 'press', {entity_id: this._entities['button.restart']}),
+    this._button(maintenance, 'Wallbox neu starten', async () => {
+      await this._call('button', 'press', {entity_id: this._entities['button.restart']}); return 'Neustart der Wallbox angefordert.';
+    },
       false, 'Wallbox wirklich neu starten? Ein Ladevorgang kann unterbrochen werden.');
-    this._button(maintenance, 'Fehlerzähler löschen', () => this._call('abl_wallbox', 'clear_fault_counters',
-      {config_entry_id: this._entry, confirm: true}), false, 'Alle Fehlerzähler im Controller dauerhaft löschen? Dies kann nicht rückgängig gemacht werden.');
+    this._button(maintenance, 'Fehlerzähler löschen', async () => {
+      await this._call('abl_wallbox', 'clear_fault_counters', {config_entry_id: this._entry, confirm: true}); return 'Fehlerzähler zurückgesetzt.';
+    }, false, 'Alle Fehlerzähler im Controller dauerhaft löschen? Dies kann nicht rückgängig gemacht werden.');
     const footer = node('footer', undefined, 'abl-footer');
     footer.append(node('span', '© 2026 Christians8710'));
     const license = node('a', 'MIT-Lizenz'); license.href = new URL('./LICENSE', import.meta.url).href; footer.append(license); shell.append(footer);
@@ -162,8 +175,8 @@ class ABLWallboxCard extends HTMLElement {
     button.addEventListener('click', async () => {
       if (this._busy || button.disabled || !this._available()) return;
       if (confirmation && !window.confirm(confirmation)) return;
-      this._busy = true; this._feedback.textContent = 'Änderung wird ausgeführt …'; this._feedback.className = 'abl-notice'; this._update();
-      try { const result = await action(); this._feedback.textContent = result === false ? 'Aktion abgebrochen.' : 'Aktion erfolgreich ausgeführt.'; }
+      this._busy = true; this._feedback.textContent = 'Wird ausgeführt …'; this._feedback.className = 'abl-notice'; this._update();
+      try { const result = await action(); this._feedback.textContent = result === false ? 'Aktion abgebrochen.' : typeof result === 'string' ? result : 'Änderung bestätigt.'; }
       catch (error) {
         const detail = error.message || String(error);
         this._technicalError.textContent = detail;
@@ -235,6 +248,8 @@ class ABLWallboxCard extends HTMLElement {
     if (key !== 'requested_current' && this._get('binary_sensor.vehicle_connected')?.state !== 'off') throw new Error('Vorher das Fahrzeug trennen.');
     await this._call('number', 'set_value', {entity_id: this._entities[fieldKey], value});
     this._dirty.delete(fieldKey);
+    return key === 'requested_current' ? `Ladestromvorgabe auf ${value} A gesetzt.` :
+      key === 'installation_limit' ? `Feste Stromgrenze auf ${value} A gesetzt.` : `Busadresse ${value} gespeichert.`;
   }
   async _saveSetting(key) {
     const state = this._get(key); const field = this._fields[key];
@@ -244,6 +259,10 @@ class ABLWallboxCard extends HTMLElement {
       await this._call('select', 'select_option', {entity_id: this._entities[key], option: field.value});
     } else await this._call('switch', field.checked ? 'turn_on' : 'turn_off', {entity_id: this._entities[key]});
     this._dirty.delete(key);
+    if (key === 'select.mode') return `Betriebsart „${field.value}“ gespeichert.`;
+    if (key === 'select.imbalance') return `Schieflasterkennung: ${field.value} gespeichert.`;
+    const label = key === 'switch.fallback_enabled' ? 'Fallback bei Steuerungsausfall' : 'Ladefreigabe nach Neustart';
+    return `${label} ${field.checked ? 'aktiviert' : 'deaktiviert'}.`;
   }
   _update() {
     if (!this._notice || !this._hass) return;
